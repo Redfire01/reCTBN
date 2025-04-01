@@ -156,12 +156,18 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
 
                 (child_node, currentPC)
         }));
+        for (child_node, mut currentPC) in learned_parent_sets {
 
+            currentPC.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+
+        }
+        
+/*
         for (child_node, currentPC) in learned_parent_sets {
             for parent_node in currentPC.iter() {
                 net.add_edge(*parent_node, child_node);
             }
-        }
+        }*/
 /*        
         for i in net.get_node_indices() {
             for j in net.get_parent_set(i).iter() {
