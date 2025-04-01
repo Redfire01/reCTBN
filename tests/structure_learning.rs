@@ -13,8 +13,11 @@ use reCTBN::structure_learning::hypothesis_test::*;
 use reCTBN::structure_learning::score_based_algorithm::*;
 use reCTBN::structure_learning::score_function::*;
 use reCTBN::structure_learning::StructuralLearningAlgorithm;
+use reCTBN::structure_learning::hiton::Hiton;
+use reCTBN::structure_learning::hiton;
 use reCTBN::tools::*;
 use utils::*;
+
 
 #[macro_use]
 extern crate approx;
@@ -521,6 +524,26 @@ pub fn chi_square_call() {
 }
 
 #[test]
+pub fn chi_square_compute_pvalues() {
+    let (net, data) = get_mixed_discrete_net_3_nodes_with_data();
+    let N3: usize = 2;
+    let N2: usize = 1;
+    let N1: usize = 0;
+    let mut separation_set = BTreeSet::new();
+    let parameter_learning = BayesianApproach { alpha: 1, tau: 1.0 };
+    let mut cache = Cache::new(&parameter_learning);
+    let chi_sq = ChiSquare::new(1e-4);
+
+    chi_sq.compute_pvalues(&net, N1, N3, &separation_set, &data, &mut cache);
+    let mut cache = Cache::new(&parameter_learning);
+    chi_sq.call(&net, N3, N1, &separation_set, &data, &mut cache);
+    chi_sq.call(&net, N3, N2, &separation_set, &data, &mut cache);
+    separation_set.insert(N1);
+    let mut cache = Cache::new(&parameter_learning);
+    chi_sq.call(&net, N2, N3, &separation_set, &data, &mut cache);
+}
+
+#[test]
 pub fn f_call() {
     let (net, data) = get_mixed_discrete_net_3_nodes_with_data();
     let N3: usize = 2;
@@ -539,6 +562,45 @@ pub fn f_call() {
     let mut cache = Cache::new(&parameter_learning);
     assert!(f.call(&net, N2, N3, &separation_set, &data, &mut cache));
 }
+
+#[test]
+pub fn f_compute_pvalues() {
+    let (net, data) = get_mixed_discrete_net_3_nodes_with_data();
+    let N3: usize = 2;
+    let N2: usize = 1;
+    let N1: usize = 0;
+    let mut separation_set = BTreeSet::new();
+    let parameter_learning = BayesianApproach { alpha: 1, tau: 1.0 };
+    let mut cache = Cache::new(&parameter_learning);
+    let f = F::new(1e-6);
+
+    f.compute_pvalues(&net, N1, N3, &separation_set, &data, &mut cache);
+    let mut cache = Cache::new(&parameter_learning);
+    f.call(&net, N3, N1, &separation_set, &data, &mut cache);
+    f.call(&net, N3, N2, &separation_set, &data, &mut cache);
+    separation_set.insert(N1);
+    let mut cache = Cache::new(&parameter_learning);
+    f.call(&net, N2, N3, &separation_set, &data, &mut cache);
+}
+
+
+#[test]
+fn learn_mixed_discrete_net_3_nodes_hiton_gen() {
+    let f = F::new(1e-6);
+    let chi_sq = ChiSquare::new(1e-4);
+    let parameter_learning = BayesianApproach { alpha: 1, tau: 1.0 };
+    let ctpc = Hiton::new(parameter_learning, f, chi_sq);
+    learn_mixed_discrete_net_3_nodes_gen_hiton(ctpc);
+}
+
+fn learn_mixed_discrete_net_3_nodes_gen_hiton<T: StructuralLearningAlgorithm>(sl: T) {
+    let (net, data) = get_mixed_discrete_net_3_nodes_with_data_gen();
+    let net = sl.fit_transform(net, &data);
+    /*assert_eq!(BTreeSet::new(), net.get_parent_set(0));
+    assert_eq!(BTreeSet::from_iter(vec![0]), net.get_parent_set(1));
+    assert_eq!(BTreeSet::from_iter(vec![0, 1]), net.get_parent_set(2));*/
+}
+
 
 #[test]
 pub fn learn_ternary_net_2_nodes_ctpc() {

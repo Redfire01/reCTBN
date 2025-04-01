@@ -4,6 +4,7 @@ pub mod constraint_based_algorithm;
 pub mod hypothesis_test;
 pub mod score_based_algorithm;
 pub mod score_function;
+pub mod hiton;
 use crate::{process, tools::Dataset};
 
 /// It defines the required methods for a _structure learning algorithm_.
