@@ -97,11 +97,10 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
             let mut currentPC_keys = BTreeSet::<usize>::new();
             let candidate_parent_set_keys: BTreeSet<usize> = candidate_parent_set.iter().map(|(key, _)| *key).collect();
             //5: Foreach node in candidate parent set... 
-            //BUG: Non aumenta mai il separation set.... 
             for X in candidate_parent_set_keys.clone().iter() { 
                 let mut separation_set_size = 0;
                 //6: IF T (child_node) not indep from X | separation set \subseteq currentPS
-                for separation_set in currentPC_keys.clone()
+                for separation_set in candidate_parent_set_keys.clone()
                                                         .iter()
                                                         .filter(|x| x != &X)
                                                         .map(|x| *x)
