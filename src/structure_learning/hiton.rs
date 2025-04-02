@@ -58,7 +58,7 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
                 .into_iter()
                 .filter(|x| x != &child_node)
                 .collect();
-            println!("child_node: {}, all_nodes: {:?}", child_node, all_parents);
+            //println!("child_node: {}, all_nodes: {:?}", child_node, all_parents);
             //1:  Forall nodes in the network it evaluate the independence test for a separation set = empty set
             for parent in all_parents.iter(){
                 let n_tests: usize = net.get_node(child_node.clone()).get_reserved_space_as_parent() 
@@ -95,60 +95,61 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
 
             //4: Initialization of the currentPS ... 
             let mut currentPC_keys = BTreeSet::<usize>::new();
-            let candidate_parent_set_keys: BTreeSet<usize> = candidate_parent_set.iter().map(|(key, _)| *key).collect();
+            let mut candidate_parent_set_keys: BTreeSet<usize> = candidate_parent_set.iter().map(|(key, _)| *key).collect();
             //5: Foreach node in candidate parent set... 
             for X in candidate_parent_set_keys.clone().iter() { 
-                let mut separation_set_size = 0;
+
                 //6: IF T (child_node) not indep from X | separation set \subseteq currentPS
-                for separation_set in candidate_parent_set_keys.clone()
-                                                        .iter()
-                                                        .filter(|x| x != &X)
-                                                        .map(|x| *x)
-                                                        .combinations(separation_set_size){
-                    let separation_set:BTreeSet::<usize> = separation_set.into_iter().collect();
-                    // cardinalità della variabile target X cardinalità del separation set  X cardinalità del candidato genitore
-                    /*let sep_set_size: usize = separation_set.iter()
-                                                .map(|x| net.get_node(x.clone()).get_reserved_space_as_parent())
-                                                .product();*/
-                    println!("child_node: {}, len separation set: {}, separation set: {:?}", child_node, separation_set.len(), separation_set);
-                    let mut sep_set_size = 1;
 
-                    for i in separation_set.iter(){
-                        sep_set_size *= net.get_node(i.clone()).get_reserved_space_as_parent();
+                let max_size = candidate_parent_set_keys.len();
+
+                for separation_set_size in 0..=max_size {  // <-- Ciclo esterno che varia `separation_set_size`
+                    for separation_set in candidate_parent_set_keys
+                        .clone()
+                        .iter()
+                        .filter(|&&x| x != *X)
+                        .copied() // Copia i valori per ottenere un iteratore su `usize`
+                        .combinations(separation_set_size) 
+                    {
+                        let separation_set: BTreeSet<usize> = separation_set.into_iter().collect();
+                        let mut sep_set_size = 1;
+
+                        for i in separation_set.iter(){
+                            sep_set_size *= net.get_node(i.clone()).get_reserved_space_as_parent();
+                        }
+
+                        let n_tests: usize = net.get_node(child_node.clone()).get_reserved_space_as_parent() 
+                                    * net.get_node(X.clone()).get_reserved_space_as_parent() 
+                                    * sep_set_size;
+
+                        let p_value_f = self.Ftest.compute_pvalues( // False if s < lim_sx (alpha/2) or s > lim_dx (1 - (alpha/2)) => M1 and M2 dependent
+                                            &net,                   // True if lim_sx < s < lim_dx => M1 and M2 independent
+                                            child_node,
+                                            *X,
+                                            &separation_set,
+                                            dataset,
+                                            &mut cache,
+                                        );
+                        let p_value_chi = self.Chi2test.compute_pvalues(        // True if < 1-self.alpha => M1 and M2 independent
+                                            &net,
+                                            child_node,
+                                            *X,
+                                            &separation_set,
+                                            dataset,
+                                            &mut cache,
+                                        );
+
+                        // 7: add X to currentPS
+                        if p_value_chi.2 && p_value_f.2 {  
+                            candidate_parent_set_keys.remove(&X);
+                        }
+
                     }
-
-                    let n_tests: usize = net.get_node(child_node.clone()).get_reserved_space_as_parent() 
-                                * net.get_node(X.clone()).get_reserved_space_as_parent() 
-                                * sep_set_size;
-
-                    let p_value_f = self.Ftest.compute_pvalues( // False if s < lim_sx (alpha/2) or s > lim_dx (1 - (alpha/2)) => M1 and M2 dependent
-                                        &net,                   // True if lim_sx < s < lim_dx => M1 and M2 independent
-                                        child_node,
-                                        *X,
-                                        &separation_set,
-                                        dataset,
-                                        &mut cache,
-                                    );
-                    let p_value_chi = self.Chi2test.compute_pvalues(        // True if < 1-self.alpha => M1 and M2 independent
-                                        &net,
-                                        child_node,
-                                        *X,
-                                        &separation_set,
-                                        dataset,
-                                        &mut cache,
-                                    );
-
-                    // 7: add X to currentPS
-                    if !(p_value_chi.2 && p_value_f.2) {  
-                        currentPC_keys.insert(*X);
-                    }
-                    separation_set_size += 1;
                 }
-                
 
             }
 
-                (child_node, currentPC_keys)
+                (child_node, candidate_parent_set_keys)
         }));
         
 
