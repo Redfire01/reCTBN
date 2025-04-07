@@ -103,7 +103,7 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
 
                 let max_size = candidate_parent_set_keys.len();
 
-                for separation_set_size in 0..=max_size {  // <-- Ciclo esterno che varia `separation_set_size`
+                for separation_set_size in 1..=max_size {  // <-- Ciclo esterno che varia `separation_set_size`
                     for separation_set in candidate_parent_set_keys
                         .clone()
                         .iter()
@@ -122,7 +122,7 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
                                     * net.get_node(X.clone()).get_reserved_space_as_parent() 
                                     * sep_set_size;
 
-                        let p_value_f = self.Ftest.compute_pvalues( // False if s < lim_sx (alpha/2) or s > lim_dx (1 - (alpha/2)) => M1 and M2 dependent
+                        let p_value_f = self.Ftest.call( // False if s < lim_sx (alpha/2) or s > lim_dx (1 - (alpha/2)) => M1 and M2 dependent
                                             &net,                   // True if lim_sx < s < lim_dx => M1 and M2 independent
                                             child_node,
                                             *X,
@@ -130,8 +130,8 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
                                             dataset,
                                             &mut cache,
                                         );
-                        let p_value_chi = self.Chi2test.compute_pvalues(        // True if < 1-self.alpha => M1 and M2 independent
-                                            &net,
+                        let p_value_chi = self.Chi2test.call(        // True if < 1-self.alpha => M1 and M2 independent
+                                            &net,                               // usare call.
                                             child_node,
                                             *X,
                                             &separation_set,
@@ -140,7 +140,7 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
                                         );
 
                         // 7: add X to currentPS
-                        if p_value_chi.2 && p_value_f.2 {  
+                        if p_value_chi && p_value_f {  
                             candidate_parent_set_keys.remove(&X);
                         }
 
