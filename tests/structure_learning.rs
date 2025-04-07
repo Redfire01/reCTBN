@@ -603,6 +603,186 @@ fn learn_mixed_discrete_net_3_nodes_gen_hiton<T: StructuralLearningAlgorithm>(sl
 
 
 #[test]
+fn learn_mixed_discrete_net_10_nodes_hiton_gen_3() {
+    let f = F::new(1e-6);
+    let chi_sq = ChiSquare::new(1e-4);
+    let parameter_learning = BayesianApproach { alpha: 1, tau: 1.0 };
+    let ctpc = Hiton::new(parameter_learning, f, chi_sq);
+    learn_mixed_discrete_net_10_nodes_gen_hiton_3(ctpc);
+}
+
+fn learn_mixed_discrete_net_10_nodes_gen_hiton_3<T: StructuralLearningAlgorithm>(sl: T) {
+    let (net, data) = get_mixed_discrete_net_10_nodes_with_data_gen_3();
+    let net = sl.fit_transform(net, &data);
+    /*assert_eq!(BTreeSet::new(), net.get_parent_set(0));
+    assert_eq!(BTreeSet::from_iter(vec![0]), net.get_parent_set(1));
+    assert_eq!(BTreeSet::from_iter(vec![0, 1]), net.get_parent_set(2));*/
+}
+
+fn get_mixed_discrete_net_10_nodes_with_data_gen_3() -> (CtbnNetwork, Dataset) { // 20%
+    let mut net = CtbnNetwork::new();
+    generate_nodes(&mut net, 9, 3);
+    net.add_node(generate_discrete_time_continous_node(String::from("9"), 4))
+        .unwrap();
+
+        net.add_edge(9, 0);
+    
+        net.add_edge(0, 1);
+
+        net.add_edge(1, 2);
+    
+        net.add_edge(2, 3);
+
+        net.add_edge(3, 4);
+    
+        net.add_edge(4, 5);
+
+        net.add_edge(5, 6);
+    
+        net.add_edge(6, 7);
+
+        net.add_edge(7, 8);
+   
+        net.add_edge(8, 9);
+
+    let mut cim_generator: UniformParametersGenerator =
+        RandomParametersGenerator::new(0.0..10.0, Some(6813071588535822));
+    cim_generator.generate_parameters(&mut net);
+
+    let data = trajectory_generator(&net, 300, 30.0, Some(6347747169756259));
+    return (net, data);
+}
+
+
+#[test]
+#[ignore]
+fn learn_mixed_discrete_net_10_nodes_hiton_gen_2() {
+    let f = F::new(1e-6);
+    let chi_sq = ChiSquare::new(1e-4);
+    let parameter_learning = BayesianApproach { alpha: 1, tau: 1.0 };
+    let ctpc = Hiton::new(parameter_learning, f, chi_sq);
+    learn_mixed_discrete_net_10_nodes_gen_hiton_2(ctpc);
+}
+
+fn learn_mixed_discrete_net_10_nodes_gen_hiton_2<T: StructuralLearningAlgorithm>(sl: T) {
+    let (net, data) = get_mixed_discrete_net_10_nodes_with_data_gen_2();
+    let net = sl.fit_transform(net, &data);
+    /*assert_eq!(BTreeSet::new(), net.get_parent_set(0));
+    assert_eq!(BTreeSet::from_iter(vec![0]), net.get_parent_set(1));
+    assert_eq!(BTreeSet::from_iter(vec![0, 1]), net.get_parent_set(2));*/
+}
+
+fn get_mixed_discrete_net_10_nodes_with_data_gen_2() -> (CtbnNetwork, Dataset) { // 20%
+    let mut net = CtbnNetwork::new();
+    generate_nodes(&mut net, 9, 4);
+    net.add_node(generate_discrete_time_continous_node(String::from("9"), 4))
+        .unwrap();
+
+        net.add_edge(3, 0);
+        net.add_edge(6, 0);
+    
+        net.add_edge(0, 1);
+        net.add_edge(5, 1);
+    
+        net.add_edge(4, 2);
+        net.add_edge(1, 2);
+    
+        net.add_edge(1, 3);
+        net.add_edge(8, 3);
+    
+        net.add_edge(7, 4);
+        net.add_edge(2, 4);
+    
+        net.add_edge(2, 5);
+        net.add_edge(9, 5);
+    
+        net.add_edge(3, 6);
+        net.add_edge(5, 6);
+        
+        net.add_edge(6, 8);
+        net.add_edge(9, 8);
+
+        net.add_edge(3, 9);
+        net.add_edge(7, 9);
+
+    let mut cim_generator: UniformParametersGenerator =
+        RandomParametersGenerator::new(0.0..10.0, Some(6813071588535822));
+    cim_generator.generate_parameters(&mut net);
+
+    let data = trajectory_generator(&net, 300, 30.0, Some(6347747169756259));
+    return (net, data);
+}
+
+
+#[test]
+
+fn learn_mixed_discrete_net_10_nodes_hiton_gen() {
+    let f = F::new(1e-6);
+    let chi_sq = ChiSquare::new(1e-4);
+    let parameter_learning = BayesianApproach { alpha: 1, tau: 1.0 };
+    let ctpc = Hiton::new(parameter_learning, f, chi_sq);
+    learn_mixed_discrete_net_10_nodes_gen_hiton(ctpc);
+}
+
+fn learn_mixed_discrete_net_10_nodes_gen_hiton<T: StructuralLearningAlgorithm>(sl: T) {
+    let (net, data) = get_mixed_discrete_net_10_nodes_with_data_gen();
+    let net = sl.fit_transform(net, &data);
+    /*assert_eq!(BTreeSet::new(), net.get_parent_set(0));
+    assert_eq!(BTreeSet::from_iter(vec![0]), net.get_parent_set(1));
+    assert_eq!(BTreeSet::from_iter(vec![0, 1]), net.get_parent_set(2));*/
+}
+
+fn get_mixed_discrete_net_10_nodes_with_data_gen() -> (CtbnNetwork, Dataset) { // 23 edges > 20% coverage
+    let mut net = CtbnNetwork::new();
+    generate_nodes(&mut net, 10, 4);
+    //net.add_node(generate_discrete_time_continous_node(String::from("9"), 5))
+        //.unwrap();
+
+    net.add_edge(3, 0);
+    net.add_edge(6, 0);
+
+    net.add_edge(0, 1);
+    net.add_edge(5, 1);
+
+    net.add_edge(4, 2);
+    net.add_edge(1, 2);
+
+    net.add_edge(1, 3);
+    net.add_edge(8, 3);
+
+    net.add_edge(7, 4);
+    net.add_edge(2, 4);
+
+    net.add_edge(2, 5);
+    net.add_edge(9, 5);
+
+    net.add_edge(3, 6);
+    net.add_edge(5, 6);
+
+    net.add_edge(4, 7);
+    net.add_edge(1, 7);
+    net.add_edge(9, 7);
+
+    net.add_edge(6, 8);
+    net.add_edge(3, 8);
+    net.add_edge(9, 8);
+    
+    net.add_edge(8, 9);
+    net.add_edge(3, 9);
+    net.add_edge(7, 9);
+
+    
+
+    let mut cim_generator: UniformParametersGenerator =
+        RandomParametersGenerator::new(0.0..10.0, Some(6813071588535822));
+    cim_generator.generate_parameters(&mut net);
+
+    let data = trajectory_generator(&net, 300, 30.0, Some(6347747169756259));
+    return (net, data);
+}
+
+
+#[test]
 pub fn learn_ternary_net_2_nodes_ctpc() {
     let f = F::new(1e-6);
     let chi_sq = ChiSquare::new(1e-4);

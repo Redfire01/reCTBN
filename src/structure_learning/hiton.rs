@@ -43,7 +43,7 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
         }
 
         let mut net = net;
-
+        println!("{:?}", net.get_node_indices());
         net.initialize_adj_matrix();
         
         let mut learned_parent_sets: Vec<(usize, BTreeSet::<usize>)> = vec![];
