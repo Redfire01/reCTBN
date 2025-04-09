@@ -17,6 +17,12 @@ use reCTBN::structure_learning::hiton::Hiton;
 use reCTBN::structure_learning::hiton;
 use reCTBN::tools::*;
 use utils::*;
+use std::time::Instant;
+use std::error::Error;
+use std::fs::File;
+use csv::Writer;
+use std::time::Duration;
+use serde::Serialize;
 
 
 #[macro_use]
@@ -601,7 +607,7 @@ fn learn_mixed_discrete_net_3_nodes_gen_hiton<T: StructuralLearningAlgorithm>(sl
     assert_eq!(BTreeSet::from_iter(vec![0, 1]), net.get_parent_set(2));*/
 }
 
-
+/*
 #[test]
 fn learn_mixed_discrete_net_10_nodes_hiton_gen_3() {
     let f = F::new(1e-6);
@@ -609,70 +615,54 @@ fn learn_mixed_discrete_net_10_nodes_hiton_gen_3() {
     let parameter_learning = BayesianApproach { alpha: 1, tau: 1.0 };
     let ctpc = Hiton::new(parameter_learning, f, chi_sq);
     learn_mixed_discrete_net_10_nodes_gen_hiton_3(ctpc);
-}
+}*/
 
-fn learn_mixed_discrete_net_10_nodes_gen_hiton_3<T: StructuralLearningAlgorithm>(sl: T) {
-    let (net, data) = get_mixed_discrete_net_10_nodes_with_data_gen_3();
-    let net = sl.fit_transform(net, &data);
-    /*assert_eq!(BTreeSet::new(), net.get_parent_set(0));
-    assert_eq!(BTreeSet::from_iter(vec![0]), net.get_parent_set(1));
-    assert_eq!(BTreeSet::from_iter(vec![0, 1]), net.get_parent_set(2));*/
+fn learn_mixed_discrete_net_10_nodes_gen_hiton_3<T: StructuralLearningAlgorithm>(wtr: &mut Writer<File>, sl: &T) -> Result<(), Box<dyn Error>> {
+    
+    let (real_net, data) = get_mixed_discrete_net_10_nodes_with_data_gen_3();
+    let n = real_net.get_node_indices().len();
+    let original_mat = create_adj_matrix(&real_net);
+
+    let start = Instant::now();
+    let net = sl.fit_transform(real_net, &data);
+    let duration = start.elapsed();
+
+    println!("Duration: {:?}", duration);
+
+    let computed_mat = create_adj_matrix(&net);
+    let mut tp = 0; 
+    let mut fp = 0; 
+    let mut fn_ = 0; 
+
+    for i in 0..n {
+        for j in 0..n {
+            if i != j {
+
+
+                match (original_mat[i][j], computed_mat[i][j]) {
+                    (1, 1) => tp += 1,
+                    (0, 1) => fp += 1,
+                    (1, 0) => fn_ += 1,
+                    _ => {} 
+                }
+            }
+        }
+    }
+    let precision = tp as f64/(tp + fp)as f64;
+    let recall = tp as f64/(tp + fn_) as f64;
+  
+    let f1_score = if precision + recall == 0.0 {
+        0.0
+    } else {
+        (2.0 * precision * recall) / (precision + recall)
+    };
+
+    save_csv(wtr, duration, f1_score)?;
+
+    Ok(())
 }
 
 fn get_mixed_discrete_net_10_nodes_with_data_gen_3() -> (CtbnNetwork, Dataset) { // 20%
-    let mut net = CtbnNetwork::new();
-    generate_nodes(&mut net, 9, 3);
-    net.add_node(generate_discrete_time_continous_node(String::from("9"), 4))
-        .unwrap();
-
-        net.add_edge(9, 0);
-    
-        net.add_edge(0, 1);
-
-        net.add_edge(1, 2);
-    
-        net.add_edge(2, 3);
-
-        net.add_edge(3, 4);
-    
-        net.add_edge(4, 5);
-
-        net.add_edge(5, 6);
-    
-        net.add_edge(6, 7);
-
-        net.add_edge(7, 8);
-   
-        net.add_edge(8, 9);
-
-    let mut cim_generator: UniformParametersGenerator =
-        RandomParametersGenerator::new(0.0..10.0, Some(6813071588535822));
-    cim_generator.generate_parameters(&mut net);
-
-    let data = trajectory_generator(&net, 300, 30.0, Some(6347747169756259));
-    return (net, data);
-}
-
-
-#[test]
-#[ignore]
-fn learn_mixed_discrete_net_10_nodes_hiton_gen_2() {
-    let f = F::new(1e-6);
-    let chi_sq = ChiSquare::new(1e-4);
-    let parameter_learning = BayesianApproach { alpha: 1, tau: 1.0 };
-    let ctpc = Hiton::new(parameter_learning, f, chi_sq);
-    learn_mixed_discrete_net_10_nodes_gen_hiton_2(ctpc);
-}
-
-fn learn_mixed_discrete_net_10_nodes_gen_hiton_2<T: StructuralLearningAlgorithm>(sl: T) {
-    let (net, data) = get_mixed_discrete_net_10_nodes_with_data_gen_2();
-    let net = sl.fit_transform(net, &data);
-    /*assert_eq!(BTreeSet::new(), net.get_parent_set(0));
-    assert_eq!(BTreeSet::from_iter(vec![0]), net.get_parent_set(1));
-    assert_eq!(BTreeSet::from_iter(vec![0, 1]), net.get_parent_set(2));*/
-}
-
-fn get_mixed_discrete_net_10_nodes_with_data_gen_2() -> (CtbnNetwork, Dataset) { // 20%
     let mut net = CtbnNetwork::new();
     generate_nodes(&mut net, 9, 4);
     net.add_node(generate_discrete_time_continous_node(String::from("9"), 4))
@@ -715,61 +705,282 @@ fn get_mixed_discrete_net_10_nodes_with_data_gen_2() -> (CtbnNetwork, Dataset) {
 
 
 #[test]
+//#[ignore] 
+fn learn_mixed_discrete_net_10_nodes_hiton_gen_2() -> Result<(), Box<dyn Error>> { // Duration: 9.9982139s
+    let file = File::create("hiton_algorithm.csv".to_string())?;
+    let mut wtr = Writer::from_writer(file);
+    let f = F::new(1e-6);
+    let chi_sq = ChiSquare::new(1e-4);
+    let parameter_learning = BayesianApproach { alpha: 1, tau: 1.0 };
+    let ctpc = Hiton::new(parameter_learning, f, chi_sq);
+    learn_mixed_discrete_net_10_nodes_gen_hiton(&mut wtr, &ctpc)?;
+    learn_mixed_discrete_net_10_nodes_gen_hiton_2(&mut wtr, &ctpc)?;
+    learn_mixed_discrete_net_10_nodes_gen_hiton_3(&mut wtr, &ctpc)?;
+    wtr.flush()?;
+
+    println!("CSV salvato con successo!");
+    Ok(())
+
+}
+
+#[test]
+//#[ignore] 
+fn learn_mixed_discrete_net_10_nodes_constraint_gen_2() -> Result<(), Box<dyn Error>> { // Duration: 10.2790371s
+    let file = File::create("Constraint-based_algorithm.csv".to_string())?;
+    let mut wtr = Writer::from_writer(file);
+    let f = F::new(1e-6);
+    let chi_sq = ChiSquare::new(1e-4);
+    let parameter_learning = BayesianApproach { alpha: 1, tau: 1.0 };
+    let ctpc = CTPC::new(parameter_learning, f, chi_sq);
+    learn_mixed_discrete_net_10_nodes_gen_hiton(&mut wtr, &ctpc)?;
+    learn_mixed_discrete_net_10_nodes_gen_hiton_2(&mut wtr, &ctpc)?;
+    learn_mixed_discrete_net_10_nodes_gen_hiton_3(&mut wtr, &ctpc)?;
+    wtr.flush()?;
+
+    println!("CSV salvato con successo!");
+    Ok(())
+
+}
+
+
+#[test]
+#[ignore]
+fn learn_mixed_discrete_net_10_nodes_hill_climbing_gen_2() -> Result<(), Box<dyn Error>> { // LogLikelihood with None Duration: 17.320026s // with Some(1) Duration: 17.0288328s
+    let file = File::create("Score-based_algorithm.csv".to_string())?;
+    let mut wtr = Writer::from_writer(file);
+    let bic = BIC::new(1, 1.0);                              // BIC with None Duration: 16.9263123s // with Some(1) Duration: 17.6956868s
+    let ll = LogLikelihood::new(1, 1.0);
+    let ctpc = HillClimbing::new(bic, None);
+    learn_mixed_discrete_net_10_nodes_gen_hiton(&mut wtr, &ctpc)?;
+    learn_mixed_discrete_net_10_nodes_gen_hiton_2(&mut wtr, &ctpc)?;
+    learn_mixed_discrete_net_10_nodes_gen_hiton_3(&mut wtr, &ctpc)?;
+    wtr.flush()?;
+
+    println!("CSV salvato con successo!");
+    Ok(())
+}
+
+fn create_adj_matrix(net: &CtbnNetwork) -> Vec<Vec<usize>>{
+    let n = net.get_node_indices().len();
+    let mut adj_matrix = vec![vec![0; n]; n];
+    for node in net.get_node_indices() {
+        for parent in net.get_parent_set(node){
+            adj_matrix[node][parent] = 1;
+        }
+    }
+    return adj_matrix;
+}
+
+#[derive(Serialize)]
+struct Record {
+    f1_score: f64,
+    duration: f64,
+    
+}
+
+fn learn_mixed_discrete_net_10_nodes_gen_hiton_2<T: StructuralLearningAlgorithm>(wtr: &mut Writer<File>, sl: &T) -> Result<(), Box<dyn Error>>  {
+    let (real_net, data) = get_mixed_discrete_net_10_nodes_with_data_gen_2();
+    let n = real_net.get_node_indices().len();
+    let original_mat = create_adj_matrix(&real_net);
+
+    let start = Instant::now();
+    let net = sl.fit_transform(real_net, &data);
+    let duration = start.elapsed();
+
+    println!("Duration: {:?}", duration);
+
+    let computed_mat = create_adj_matrix(&net);
+    let mut tp = 0; 
+    let mut fp = 0; 
+    let mut fn_ = 0; 
+
+    for i in 0..n {
+        for j in 0..n {
+            if i != j {
+
+
+                match (original_mat[i][j], computed_mat[i][j]) {
+                    (1, 1) => tp += 1,
+                    (0, 1) => fp += 1,
+                    (1, 0) => fn_ += 1,
+                    _ => {} 
+                }
+            }
+        }
+    }
+    let precision = tp as f64/(tp + fp)as f64;
+    let recall = tp as f64/(tp + fn_) as f64;
+  
+    let f1_score = if precision + recall == 0.0 {
+        0.0
+    } else {
+        (2.0 * precision * recall) / (precision + recall)
+    };
+
+    save_csv(wtr, duration, f1_score)?;
+
+    Ok(())
+    
+}
+
+fn save_csv(wtr: &mut Writer<File>, duration: Duration, f1_score: f64)  -> Result<(), Box<dyn Error>>{
+    
+
+    let secs = duration.as_secs();
+    let nanos = duration.subsec_nanos(); 
+
+    let fraction = nanos as f64 / 1_000_000_000.0;
+
+    let dur = secs as f64 + fraction;
+
+
+    let records = vec![
+        Record {
+            
+            f1_score: f1_score,
+            duration:  dur,
+        },
+    ];
+
+    for record in records {
+        wtr.serialize(record)?;
+    }
+
+    Ok(())
+}
+
+
+fn get_mixed_discrete_net_10_nodes_with_data_gen_2() -> (CtbnNetwork, Dataset) { // 20%
+    let mut net = CtbnNetwork::new();
+    generate_nodes(&mut net, 9, 3);
+    net.add_node(generate_discrete_time_continous_node(String::from("9"), 4))
+        .unwrap();
+
+        net.add_edge(3, 0);
+        net.add_edge(6, 0);
+    
+        net.add_edge(0, 1);
+        net.add_edge(5, 1);
+    
+        net.add_edge(4, 2);
+        net.add_edge(1, 2);
+    
+        net.add_edge(1, 3);
+        net.add_edge(8, 3);
+    
+        net.add_edge(7, 4);
+        net.add_edge(2, 4);
+    
+        net.add_edge(2, 5);
+        net.add_edge(9, 5);
+    
+        net.add_edge(3, 6);
+        net.add_edge(5, 6);
+        
+        net.add_edge(6, 8);
+        net.add_edge(9, 8);
+
+        net.add_edge(3, 9);
+        net.add_edge(7, 9);
+
+    let mut cim_generator: UniformParametersGenerator =
+        RandomParametersGenerator::new(0.0..10.0, Some(6813071588535822));
+    cim_generator.generate_parameters(&mut net);
+
+    let data = trajectory_generator(&net, 300, 30.0, Some(6347747169756259));
+    return (net, data);
+
+}
+
+
+/*
+#[test]
 
 fn learn_mixed_discrete_net_10_nodes_hiton_gen() {
     let f = F::new(1e-6);
     let chi_sq = ChiSquare::new(1e-4);
     let parameter_learning = BayesianApproach { alpha: 1, tau: 1.0 };
     let ctpc = Hiton::new(parameter_learning, f, chi_sq);
-    learn_mixed_discrete_net_10_nodes_gen_hiton(ctpc);
-}
+    learn_mixed_discrete_net_10_nodes_gen_hiton(&ctpc);
+}*/
 
-fn learn_mixed_discrete_net_10_nodes_gen_hiton<T: StructuralLearningAlgorithm>(sl: T) {
-    let (net, data) = get_mixed_discrete_net_10_nodes_with_data_gen();
-    let net = sl.fit_transform(net, &data);
-    /*assert_eq!(BTreeSet::new(), net.get_parent_set(0));
-    assert_eq!(BTreeSet::from_iter(vec![0]), net.get_parent_set(1));
-    assert_eq!(BTreeSet::from_iter(vec![0, 1]), net.get_parent_set(2));*/
+fn learn_mixed_discrete_net_10_nodes_gen_hiton<T: StructuralLearningAlgorithm>(wtr: &mut Writer<File>, sl: &T) -> Result<(), Box<dyn Error>> {
+    
+    let (real_net, data) = get_mixed_discrete_net_10_nodes_with_data_gen();
+    let n = real_net.get_node_indices().len();
+    let original_mat = create_adj_matrix(&real_net);
+
+    let start = Instant::now();
+    let net = sl.fit_transform(real_net, &data);
+    let duration = start.elapsed();
+
+    println!("Duration: {:?}", duration);
+
+    let computed_mat = create_adj_matrix(&net);
+    let mut tp = 0; 
+    let mut fp = 0; 
+    let mut fn_ = 0; 
+
+    for i in 0..n {
+        for j in 0..n {
+            if i != j {
+
+
+                match (original_mat[i][j], computed_mat[i][j]) {
+                    (1, 1) => tp += 1,
+                    (0, 1) => fp += 1,
+                    (1, 0) => fn_ += 1,
+                    _ => {} 
+                }
+            }
+        }
+    }
+    let precision = tp as f64/(tp + fp)as f64;
+    let recall = tp as f64/(tp + fn_) as f64;
+  
+    let f1_score = if precision + recall == 0.0 {
+        0.0
+    } else {
+        (2.0 * precision * recall) / (precision + recall)
+    };
+
+    save_csv(wtr, duration, f1_score)?;
+
+    Ok(())
 }
 
 fn get_mixed_discrete_net_10_nodes_with_data_gen() -> (CtbnNetwork, Dataset) { // 23 edges > 20% coverage
     let mut net = CtbnNetwork::new();
-    generate_nodes(&mut net, 10, 4);
-    //net.add_node(generate_discrete_time_continous_node(String::from("9"), 5))
+    generate_nodes(&mut net, 10, 3);
+    //net.add_node(generate_discrete_time_continous_node(String::from("9"), 4));
         //.unwrap();
 
-    net.add_edge(3, 0);
-    net.add_edge(6, 0);
-
-    net.add_edge(0, 1);
-    net.add_edge(5, 1);
-
-    net.add_edge(4, 2);
-    net.add_edge(1, 2);
-
-    net.add_edge(1, 3);
-    net.add_edge(8, 3);
-
-    net.add_edge(7, 4);
-    net.add_edge(2, 4);
-
-    net.add_edge(2, 5);
-    net.add_edge(9, 5);
-
-    net.add_edge(3, 6);
-    net.add_edge(5, 6);
-
-    net.add_edge(4, 7);
-    net.add_edge(1, 7);
-    net.add_edge(9, 7);
-
-    net.add_edge(6, 8);
-    net.add_edge(3, 8);
-    net.add_edge(9, 8);
+        net.add_edge(3, 0);
+        net.add_edge(6, 0);
     
-    net.add_edge(8, 9);
-    net.add_edge(3, 9);
-    net.add_edge(7, 9);
+        net.add_edge(0, 1);
+        net.add_edge(5, 1);
+    
+        net.add_edge(4, 2);
+        net.add_edge(1, 2);
+    
+        net.add_edge(1, 3);
+        net.add_edge(8, 3);
+    
+        net.add_edge(7, 4);
+        net.add_edge(2, 4);
+    
+        net.add_edge(2, 5);
+        net.add_edge(9, 5);
+    
+        net.add_edge(3, 6);
+        net.add_edge(5, 6);
+        
+        net.add_edge(6, 8);
+        net.add_edge(9, 8);
+
+        net.add_edge(3, 9);
+        net.add_edge(7, 9);
 
     
 

@@ -43,7 +43,6 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
         }
 
         let mut net = net;
-        println!("{:?}", net.get_node_indices());
         net.initialize_adj_matrix();
         
         let mut learned_parent_sets: Vec<(usize, BTreeSet::<usize>)> = vec![];
@@ -90,20 +89,20 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
                 
             }
             //3: Sorting of the candidate parent set
-
             candidate_parent_set.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
 
             //4: Initialization of the currentPS ... 
             let mut currentPC_keys = BTreeSet::<usize>::new();
             let mut candidate_parent_set_keys: BTreeSet<usize> = candidate_parent_set.iter().map(|(key, _)| *key).collect();
             //5: Foreach node in candidate parent set... 
-            for X in candidate_parent_set_keys.clone().iter() { 
-
+            
                 //6: IF T (child_node) not indep from X | separation set \subseteq currentPS
 
-                let max_size = candidate_parent_set_keys.len();
+            let max_size = candidate_parent_set_keys.len();
 
-                for separation_set_size in 1..=max_size {  // <-- Ciclo esterno che varia `separation_set_size`
+            for separation_set_size in 1..=max_size {  // <-- Ciclo esterno che varia `separation_set_size`
+                for X in candidate_parent_set_keys.clone().iter() { 
+
                     for separation_set in candidate_parent_set_keys
                         .clone()
                         .iter()
@@ -117,10 +116,6 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
                         for i in separation_set.iter(){
                             sep_set_size *= net.get_node(i.clone()).get_reserved_space_as_parent();
                         }
-
-                        let n_tests: usize = net.get_node(child_node.clone()).get_reserved_space_as_parent() 
-                                    * net.get_node(X.clone()).get_reserved_space_as_parent() 
-                                    * sep_set_size;
 
                         let p_value_f = self.Ftest.call( // False if s < lim_sx (alpha/2) or s > lim_dx (1 - (alpha/2)) => M1 and M2 dependent
                                             &net,                   // True if lim_sx < s < lim_dx => M1 and M2 independent
@@ -142,6 +137,7 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
                         // 7: add X to currentPS
                         if p_value_chi && p_value_f {  
                             candidate_parent_set_keys.remove(&X);
+                            break;
                         }
 
                     }
@@ -154,10 +150,7 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
         
 
         for (child_node, currentPC) in learned_parent_sets {
-            let mut i = 0;
             for parent_node in currentPC.iter() {
-                i = i+1;
-                println!("child node: {}, parent node: {}, it = {}", child_node, parent_node, i);
                 net.add_edge(*parent_node, child_node);
             }
         }
