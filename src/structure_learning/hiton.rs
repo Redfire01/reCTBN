@@ -51,7 +51,6 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
         learned_parent_sets.par_extend(net.get_node_indices().into_par_iter().map(|child_node| {
             let mut cache = Cache::new(&self.parameter_learning);
             let mut candidate_parent_set: Vec<(usize, f64)> = Vec::new();
-            // Da qui cambia 
             let mut all_parents: BTreeSet<usize> = net
                 .get_node_indices()
                 .into_iter()
@@ -82,6 +81,8 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
                 // F s < limsx || s > limdx --> dependent || Chi-squared < 1-self-alpha independent --> > 1-self.alpha --> dependent
                 //2: IF: the nodes are not independent they are added to candidate_parent_set ELSE: not considered
                 //   eliminate all the nodes independent from T.
+                /*println!("Child_node: {}, possibleParent: {}, p_value f:{}, p_value chi: {}", child_node, parent, 
+                        (p_value_f.0/ (2.0 * n_tests as f64)), (p_value_chi.0/ (2.0 * n_tests as f64)));*/
                 if !(p_value_f.2 && p_value_chi.2) {  
                     // lista di tuple (parent, mean_p_value)
                     candidate_parent_set.push((*parent, ((p_value_f.0 + p_value_chi.0)/(2.0 * n_tests as f64))));
@@ -89,18 +90,17 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
                 
             }
             //3: Sorting of the candidate parent set
+            //println!("child node: {}, parent set: {:?}", child_node, candidate_parent_set);
             candidate_parent_set.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
-
+            //println!("child node: {}, parent set: {:?}", child_node, candidate_parent_set);
             //4: Initialization of the currentPS ... 
-            let mut currentPC_keys = BTreeSet::<usize>::new();
             let mut candidate_parent_set_keys: BTreeSet<usize> = candidate_parent_set.iter().map(|(key, _)| *key).collect();
             //5: Foreach node in candidate parent set... 
             
                 //6: IF T (child_node) not indep from X | separation set \subseteq currentPS
 
-            let max_size = candidate_parent_set_keys.len();
 
-            for separation_set_size in 1..=max_size {  // <-- Ciclo esterno che varia `separation_set_size`
+            for separation_set_size in 1..=candidate_parent_set_keys.len() {  // <-- Ciclo esterno che varia `separation_set_size`
                 for X in candidate_parent_set_keys.clone().iter() { 
 
                     for separation_set in candidate_parent_set_keys
@@ -133,7 +133,7 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
                                             dataset,
                                             &mut cache,
                                         );
-
+                        
                         // 7: add X to currentPS
                         if p_value_chi && p_value_f {  
                             candidate_parent_set_keys.remove(&X);

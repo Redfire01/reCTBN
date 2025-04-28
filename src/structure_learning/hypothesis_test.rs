@@ -47,7 +47,7 @@ pub trait HypothesisTest {
 /// * `alpha` - is the significance level, the probability to reject a true null hypothesis;
 ///   in other words is the risk of concluding that an association between the variables exists
 ///   when there is no actual association.
-
+#[derive(Copy, Clone)]
 pub struct ChiSquare {
     alpha: f64,
 }
@@ -62,7 +62,7 @@ pub struct ChiSquare {
 /// * `alpha` - is the significance level, the probability to reject a true null hypothesis;
 ///   in other words is the risk of concluding that an association between the variables exists
 ///   when there is no actual association.
-
+#[derive(Copy, Clone)]
 pub struct F {
     alpha: f64,
 }
