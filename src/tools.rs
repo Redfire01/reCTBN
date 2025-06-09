@@ -59,6 +59,71 @@ impl Dataset {
     }
 }
 
+
+pub fn trajectory_generator_2<T: process::NetworkProcess>(
+    net: &T,
+    n_trajectories: u64,
+    cont_end: usize,
+    seed: Option<u64>,
+    n_node: usize,
+) -> Dataset {
+    let mut trajectories: Vec<Trajectory> = Vec::new();
+
+    //Random Generator object
+    let mut sampler = ForwardSampler::new(net, seed, None);
+    
+    
+    
+  
+    for _ in 0..n_trajectories {
+        let mut time: Vec<f64> = Vec::new();
+        //Configuration of the process variables at time t initialized with an uniform
+        //distribution.
+        let mut events: Vec<process::NetworkProcessState> = Vec::new();
+
+        //Current Time and Current State
+        let mut sample = sampler.next().unwrap();
+
+        time.push(sample.t);
+        events.push(sample.state);
+        let mut counters = vec![0; n_node];
+
+        while !counters.iter().all(|&x| x >= cont_end) {
+            //History of all the moments in which something changed
+            
+            let sample2 = sampler.next().unwrap();
+
+            //println!("sampler: {:?}", sample2.state);
+            for i in 0..events[0].len(){
+                if sample2.state[i] != events[0][i]{
+                    counters[i] += 1; 
+                }
+            }
+            time.push(sample2.t);
+            events.push(sample2.state);
+
+        }
+        trajectories.push(Trajectory::new(
+            Array::from_vec(time.clone()),
+            Array2::from_shape_vec(
+                (events.len(), events.last().unwrap().len()),
+                events
+                .iter()
+                .flatten()
+                .map(|x| match x {
+                    params::StateType::Discrete(x) => x.clone(),
+                })
+                .collect(),
+            )
+            .unwrap(),
+        ));
+        sampler.reset();
+    }
+    
+    Dataset::new(trajectories)
+
+}
+
 pub fn trajectory_generator<T: process::NetworkProcess>(
     net: &T,
     n_trajectories: u64,

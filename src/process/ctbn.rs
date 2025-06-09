@@ -59,6 +59,7 @@ use super::{NetworkProcess, NetworkProcessState};
 /// let cs = net.get_children_set(X1);
 /// assert_eq!(&X2, cs.iter().next().unwrap());
 /// ```
+#[derive(Clone)]
 pub struct CtbnNetwork {
     adj_matrix: Option<Array2<u16>>,
     nodes: Vec<Params>,

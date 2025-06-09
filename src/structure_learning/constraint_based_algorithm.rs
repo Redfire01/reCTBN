@@ -327,7 +327,7 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for CTPC<P> {
                             &separation_set,
                             dataset,
                             &mut cache,
-                        ) {
+                        ){
                             candidate_parent_set_TMP.remove(parent_node);
                             break;
                         }

@@ -52,13 +52,28 @@ fn global_test_density_first() -> Result<(), Box<dyn Error>>{
     //test_random_all_algorithms(0.1, 10);
     //test_random_all_algorithms(0.2, 10);
     //test_random_all_algorithms(0.3, 10);
+    //test_random_all_algorithms(0.4, 10);
+    //test_random_all_algorithms(0.3, 10);
+    //test_random_all_algorithms(0.5, 20);
+    //test_random_all_algorithms(0.05, 20);
     //test_random_all_algorithms(0.1, 20);
+    //test_random_all_algorithms(0.15, 20);
     //test_random_all_algorithms(0.2, 20);
-    test_random_all_algorithms(0.3, 20);
+    test_random_all_algorithms(0.30, 20);
+    //test_random_all_algorithms(0.4, 20);
+    //test_random_all_algorithms(0.5, 20);
+    //test_random_all_algorithms(0.4, 30);
+    //test_random_all_algorithms(0.2, 20);
     //test_random_all_algorithms(0.1, 30);
+    //test_random_all_algorithms(0.15, 30);
     //test_random_all_algorithms(0.2, 30);
     //test_random_all_algorithms(0.3, 30);
+    //test_random_all_algorithms(0.4, 30);
     //test_all_in_one(10);
+    //test_random_all_algorithms(0.1, 40);
+    //let (net1, real_net2, real_net3, data) = get_mixed_discrete_net_10_nodes_with_data_gen_random(20, 0.2); 
+    //let data = trajectory_generator_2(&net1, 100, 10, Some(6347747169756259));
+    //println!("{:?}", data);
     
     //learn_mixed_discrete_net_10_nodes_hiton_gen_2("Costraint-based_random".to_string(), 10);
     //learn_mixed_discrete_net_10_nodes_hiton_gen_2("Score-based_random".to_string(), 10);
@@ -76,31 +91,17 @@ fn test_all_in_one(n_node:usize) -> Result<(), Box<dyn Error>> {
         chi_sq = ChiSquare::new(1e-4);
     }
     else if n_node == 20{
-        f = F::new(1e-10);
-        chi_sq = ChiSquare::new(1e-7);
+        f = F::new(1e-6);
+        chi_sq = ChiSquare::new(1e-4);
     }
     else {
-        f = F::new(1e-18);
-        chi_sq = ChiSquare::new(1e-12);
+        f = F::new(1e-4);
+        chi_sq = ChiSquare::new(1e-2);
     }
     
     let parameter_learning = BayesianApproach { alpha: 1, tau: 1.0 };
     let hiton = Hiton::new(parameter_learning, f, chi_sq);
 
-    let mut f;
-    let mut chi_sq;
-    if n_node == 10{
-        f = F::new(1e-6);
-        chi_sq = ChiSquare::new(1e-4);
-    }
-    else if n_node == 20{
-        f = F::new(1e-3);
-        chi_sq = ChiSquare::new(1e-3);
-    }
-    else {
-        f = F::new(1e-18);
-        chi_sq = ChiSquare::new(1e-12);
-    }
     let parameter_learning = BayesianApproach { alpha: 1, tau: 1.0 };
     let ctpc = CTPC::new(parameter_learning, f, chi_sq);
 
@@ -108,11 +109,11 @@ fn test_all_in_one(n_node:usize) -> Result<(), Box<dyn Error>> {
     let ll = LogLikelihood::new(1, 1.0);
     let ctss = HillClimbing::new(bic, None);
     
-    let (real_net1, real_net2, real_net3, data) = all_in_one(n_node);
+    let (real_net1, real_net2, real_net3, data1, data2, data3) = all_in_one(n_node);
     
-    learn_mixed_discrete_net_gen(&mut wtr, &hiton, 1, n_node, real_net1, data.clone())?;
-    learn_mixed_discrete_net_gen(&mut wtr, &ctpc, 1, n_node, real_net2, data.clone())?;
-    learn_mixed_discrete_net_gen(&mut wtr, &ctss, 1, n_node, real_net3, data.clone())?;
+    learn_mixed_discrete_net_gen(&mut wtr, &hiton, 1, n_node, real_net1, data1.clone())?;
+    learn_mixed_discrete_net_gen(&mut wtr, &ctpc, 1, n_node, real_net2, data1.clone())?;
+    learn_mixed_discrete_net_gen(&mut wtr, &ctss, 1, n_node, real_net3, data1.clone())?;
 
     wtr.flush()?;
 
@@ -122,7 +123,7 @@ fn test_all_in_one(n_node:usize) -> Result<(), Box<dyn Error>> {
 
 }
 
-fn all_in_one(n_node:usize) ->(CtbnNetwork, CtbnNetwork, CtbnNetwork, Dataset) {
+fn all_in_one(n_node:usize) ->(CtbnNetwork, CtbnNetwork, CtbnNetwork, Dataset, Dataset, Dataset) {
 
     let mut net1 = CtbnNetwork::new();
     let mut net2 = CtbnNetwork::new();
@@ -132,18 +133,40 @@ fn all_in_one(n_node:usize) ->(CtbnNetwork, CtbnNetwork, CtbnNetwork, Dataset) {
     generate_nodes(&mut net3, n_node, 3);
     
     
-    let mut i = 1;
-    
-    while i < n_node{
-        net1.add_edge(i, 0);
-        net2.add_edge(i, 0);
-        net3.add_edge(i, 0);
+    let mut i = 0;
+
+    while i < n_node-2{
+        net1.add_edge(i, n_node -2);
+        net2.add_edge(i, n_node -2);
+        net3.add_edge(i, n_node -2);
         i = i + 1;
     }
-    
+    net1.add_edge(n_node -2, n_node -1);
+    net2.add_edge(n_node -2, n_node -1);
+    net3.add_edge(n_node -2, n_node -1);
+    //Tree structure
+    let mut i = 2;
+    /*
+    while i < n_node-2{
+        net1.add_edge(i, i+1);
+        net2.add_edge(i, i+1);
+        net3.add_edge(i, i+1);
+        net1.add_edge(i, i-1);
+        net2.add_edge(i, i-1);
+        net3.add_edge(i, i-1);
+        /*
+        net1.add_edge(i, i+2);
+        net2.add_edge(i, i+2);
+        net3.add_edge(i, i+2);
+        net1.add_edge(i, i-2);
+        net2.add_edge(i, i-2);
+        net3.add_edge(i, i-2);*/
+        i = i + 1;
+    }*/
+
 
     let mut cim_generator: UniformParametersGenerator =
-        RandomParametersGenerator::new(1.0..10.0, Some(6813071588535822));
+        RandomParametersGenerator::new(10.0..30.0, Some(6813071588535822));
 
     cim_generator.generate_parameters(&mut net1);
 
@@ -151,112 +174,175 @@ fn all_in_one(n_node:usize) ->(CtbnNetwork, CtbnNetwork, CtbnNetwork, Dataset) {
 
     cim_generator.generate_parameters(&mut net3);
 
-    let data = trajectory_generator(&net1, 30 * n_node, 30.0, Some(6347747169756259)); // modificare 
-
+    //let number = 30* n_node;
+    let number = 2000;
+    println!("numero traj: {}", number);
+    let data1 = trajectory_generator(&net1, number.try_into().unwrap(), 10.0, Some(6347747169756259)); // modificare 
+    let data2 = trajectory_generator(&net1, number.try_into().unwrap(), 10.0, Some(6347747169756259));
+    let data3 = trajectory_generator(&net1, number.try_into().unwrap(), 10.0, Some(6347747169756259));
     
 
-    return (net1, net2, net3, data);
+    return (net1, net2, net3, data1, data2, data3);
 }
 
 fn test_random_all_algorithms(density: f64, n_node:usize) -> Result<(), Box<dyn Error>> { 
-    let filename = format!("Algorithms_{}_{}_nodes.csv", density, n_node);
+    
+    let filename = format!("Algorithms_{}_{}_nodes_pochi_dati_mean_value_maggiore_prova_corrected_2.csv", density, n_node);
     let file = File::create(filename.to_string())?;
     let mut wtr = Writer::from_writer(file);
+    for n in 0..30{
+        let mut f:F;
+        let mut chi_sq:ChiSquare;
 
-    let mut f = F::new(1e-2);
-    let mut chi_sq = ChiSquare::new(1e-2);
-    //(f, chi) = funz(n_node)
-    if n_node == 10{
-        if density == 0.1{
+        if n_node == 10{
+            if density == 0.1{
+                f = F::new(5e-5);
+                chi_sq = ChiSquare::new(5e-3);
+            }
+            else if density == 0.2{
+                f = F::new(1e-3);
+                chi_sq = ChiSquare::new(1e-2);
+            }
+            else{
+                f = F::new(1e-2);
+                chi_sq = ChiSquare::new(1e-1);
+            }
+        }
+        else if n_node == 20{
+            if density == 0.1{
+                f = F::new(5e-5);
+                chi_sq = ChiSquare::new(5e-3);
+            }
+            else if density == 0.05{
+                f = F::new(1e-2);
+                chi_sq = ChiSquare::new(1e-2);
+            }
+            else if density == 0.15{
+                f = F::new(1e-5);
+                chi_sq = ChiSquare::new(1e-3);
+            }
+            else if density == 0.2{
+                f = F::new(2.5e-1);
+                chi_sq = ChiSquare::new(2.5e-1);
+            }
+            else{
+                f = F::new(3e-1);
+                chi_sq = ChiSquare::new(3e-1);
+            }
+        }
+        else {
+            if density == 0.1{
+                f = F::new(5e-5);
+                chi_sq = ChiSquare::new(5e-3);
+            }
+            else if density == 0.15{
+                f = F::new(5e-3);
+                chi_sq = ChiSquare::new(5e-2);
+            }
+            else if density == 0.2{
+                f = F::new(1e-1);
+                chi_sq = ChiSquare::new(1e-1);
+            }
+            else{
+                f = F::new(5e-2);
+                chi_sq = ChiSquare::new(1e-1);
+            }
+        }
+        let parameter_learning = BayesianApproach { alpha: 1, tau: 1.0 };
+        
+    /*
+        let mut f;
+        let mut chi_sq;
+        if n_node == 10{
             f = F::new(1e-6);
             chi_sq = ChiSquare::new(1e-4);
         }
-        else if density == 0.2{
-            f = F::new(5e-6);
-            chi_sq = ChiSquare::new(5e-4);
-        }
-        else{
-            f = F::new(1e-5);
-            chi_sq = ChiSquare::new(1e-3);
-        }
-    }
-    else if n_node == 20{
-        if density < 0.3{
+        else if n_node == 20{
             f = F::new(1e-2);
             chi_sq = ChiSquare::new(1e-2);
         }
-        else{
-            f = F::new(5e-2);
-            chi_sq = ChiSquare::new(5e-2);
-        }
-    }
-    else {
-        if density == 0.1{
-            f = F::new(1e-2);
-            chi_sq = ChiSquare::new(1e-2);
-        }
-        else if density == 0.2{
-            f = F::new(125e-4);
-            chi_sq = ChiSquare::new(125e-4);
-        }
-        else{
-            f = F::new(25e-3);
-            chi_sq = ChiSquare::new(25e-3);
-        }
-    }
-    let parameter_learning = BayesianApproach { alpha: 1, tau: 1.0 };
-    let hiton = Hiton::new(parameter_learning, f, chi_sq);
-/*
-    let mut f;
-    let mut chi_sq;
-    if n_node == 10{
-        f = F::new(1e-6);
-        chi_sq = ChiSquare::new(1e-4);
-    }
-    else if n_node == 20{
-        f = F::new(1e-2);
-        chi_sq = ChiSquare::new(1e-2);
-    }
-    else {
-        f = F::new(1e-18);
-        chi_sq = ChiSquare::new(1e-12);
-    }*/
-    let parameter_learning = BayesianApproach { alpha: 1, tau: 1.0 };
-    
-
-    let bic = BIC::new(1, 1.0);      
-    let ll = LogLikelihood::new(1, 1.0);
-    
-    if density == 0.1 { 
-        let (real_net1, real_net2, real_net3, data) = get_mixed_discrete_net_10_nodes_with_data_gen_random(n_node, 0.1);  
-        learn_mixed_discrete_net_gen(&mut wtr, &hiton, 1, n_node, real_net1, data.clone())?;
-        let ctpc = CTPC::new(parameter_learning, f, chi_sq);
-        learn_mixed_discrete_net_gen(&mut wtr, &ctpc, 1, n_node, real_net2, data.clone())?;
-        let ctss = HillClimbing::new(ll, None);
-        learn_mixed_discrete_net_gen(&mut wtr, &ctss, 1, n_node, real_net3, data.clone())?;
-    }
-    else if density == 0.2{
-        let (real_net1, real_net2, real_net3, data) = get_mixed_discrete_net_10_nodes_with_data_gen_random(n_node, 0.2);
-
-        learn_mixed_discrete_net_gen(&mut wtr, &hiton, 2, n_node, real_net1, data.clone())?;
-        let ctpc = CTPC::new(parameter_learning, f, chi_sq);
-        learn_mixed_discrete_net_gen(&mut wtr, &ctpc, 2, n_node, real_net2, data.clone())?;
-        let ctss = HillClimbing::new(ll, None);
-        learn_mixed_discrete_net_gen(&mut wtr, &ctss, 2, n_node, real_net3, data.clone())?;
-    }
-    else if density == 0.3{
+        else {
+            f = F::new(1e-18);
+            chi_sq = ChiSquare::new(1e-12);
+        }*/
+        let parameter_learning = BayesianApproach { alpha: 1, tau: 1.0 };
         
-        let (real_net1, real_net2, real_net3, data) = get_mixed_discrete_net_10_nodes_with_data_gen_random(n_node, 0.3);
 
-        learn_mixed_discrete_net_gen(&mut wtr, &hiton, 3, n_node, real_net1, data.clone())?;
+        let bic = BIC::new(1, 1.0);      
+        let ll = LogLikelihood::new(1, 1.0);
+
+//        if density == 0.1 { 
+        let (real_net1, real_net2, real_net3, data1, data2, data3) = 
+                    get_mixed_discrete_net_10_nodes_with_data_gen_random(n_node, density);
+        let hiton = Hiton::new(parameter_learning, f, chi_sq); 
+        learn_mixed_discrete_net_gen(&mut wtr, &hiton, 1, n_node, real_net1.clone(), data1.clone())?;
+        learn_mixed_discrete_net_gen(&mut wtr, &hiton, 1, n_node, real_net1.clone(), data2.clone())?;
+        learn_mixed_discrete_net_gen(&mut wtr, &hiton, 1, n_node, real_net1.clone(), data3.clone())?;
         let ctpc = CTPC::new(parameter_learning, f, chi_sq);
-        learn_mixed_discrete_net_gen(&mut wtr, &ctpc, 3, n_node, real_net2, data.clone())?;
+        learn_mixed_discrete_net_gen(&mut wtr, &ctpc, 1, n_node, real_net1.clone(), data1.clone())?;
+        learn_mixed_discrete_net_gen(&mut wtr, &ctpc, 1, n_node, real_net1.clone(), data2.clone())?;
+        learn_mixed_discrete_net_gen(&mut wtr, &ctpc, 1, n_node, real_net1.clone(), data3.clone())?;
         let ctss = HillClimbing::new(ll, None);
-        learn_mixed_discrete_net_gen(&mut wtr, &ctss, 3, n_node, real_net3, data.clone())?;
-    }
+        learn_mixed_discrete_net_gen(&mut wtr, &ctss, 1, n_node, real_net1.clone(), data1.clone())?;
+        learn_mixed_discrete_net_gen(&mut wtr, &ctss, 1, n_node, real_net1.clone(), data2.clone())?;
+        learn_mixed_discrete_net_gen(&mut wtr, &ctss, 1, n_node, real_net1.clone(), data3.clone())?;
+/*        }
+        else if density == 0.15{
+            let (real_net1, real_net2, real_net3, data1, data2, data3) = 
+                    get_mixed_discrete_net_10_nodes_with_data_gen_random(n_node, density);
+            let hiton = Hiton::new(parameter_learning, f, chi_sq);
+            println!("Inizio funzione 1");
+            learn_mixed_discrete_net_gen(&mut wtr, &hiton, 2, n_node, real_net1, data.clone())?;
+            println!("Fine funzione 1");
+            let ctpc = CTPC::new(parameter_learning, f, chi_sq);
+            println!("Inizio funzione 2");
+            learn_mixed_discrete_net_gen(&mut wtr, &ctpc, 2, n_node, real_net2, data.clone())?;
+            println!("Fine funzione 2");
+            let ctss = HillClimbing::new(ll, None);
+            println!("Inizio funzione 3");
+            learn_mixed_discrete_net_gen(&mut wtr, &ctss, 2, n_node, real_net3, data.clone())?;
+            println!("Fine funzione 3");
+        }
+        else if density == 0.2{
+            let (real_net1, real_net2, real_net3, data1, data2, data3) = 
+                    get_mixed_discrete_net_10_nodes_with_data_gen_random(n_node, density);
+            let hiton = Hiton::new(parameter_learning, f, chi_sq);
+            println!("Inizio funzione 1");
+            learn_mixed_discrete_net_gen(&mut wtr, &hiton, 2, n_node, real_net1, data.clone())?;
+            println!("Fine funzione 1");
+            let ctpc = CTPC::new(parameter_learning, f, chi_sq);
+            println!("Inizio funzione 2");
+            learn_mixed_discrete_net_gen(&mut wtr, &ctpc, 2, n_node, real_net2, data.clone())?;
+            println!("Fine funzione 2");
+            let ctss = HillClimbing::new(ll, None);
+            println!("Inizio funzione 3");
+            learn_mixed_discrete_net_gen(&mut wtr, &ctss, 2, n_node, real_net3, data.clone())?;
+            println!("Fine funzione 3");
+        }
+        else if density == 0.3{
+            
+            let (real_net1, real_net2, real_net3, data1, data2, data3) = 
+                    get_mixed_discrete_net_10_nodes_with_data_gen_random(n_node, density);
+            let hiton = Hiton::new(parameter_learning, f, chi_sq);
+            learn_mixed_discrete_net_gen(&mut wtr, &hiton, 3, n_node, real_net1, data.clone())?;
+            let ctpc = CTPC::new(parameter_learning, f, chi_sq);
+            learn_mixed_discrete_net_gen(&mut wtr, &ctpc, 3, n_node, real_net2, data.clone())?;
+            let ctss = HillClimbing::new(ll, None);
+            learn_mixed_discrete_net_gen(&mut wtr, &ctss, 3, n_node, real_net3, data.clone())?;
+        }
+        else {
+            let (real_net1, real_net2, real_net3, data1, data2, data3) = 
+                        get_mixed_discrete_net_10_nodes_with_data_gen_random(n_node, density);
+            let hiton = Hiton::new(parameter_learning, f, chi_sq);
+            learn_mixed_discrete_net_gen(&mut wtr, &hiton, density as usize*10, n_node, real_net1, data.clone())?;
+            let ctpc = CTPC::new(parameter_learning, f, chi_sq);
+            learn_mixed_discrete_net_gen(&mut wtr, &ctpc, density as usize *10, n_node, real_net2, data.clone())?;
+            let ctss = HillClimbing::new(ll, None);
+            learn_mixed_discrete_net_gen(&mut wtr, &ctss, density as usize*10, n_node, real_net3, data.clone())?;
+        }*/
  
 
-    
+    }
     wtr.flush()?;
 
     println!("CSV salvato con successo!");
@@ -275,7 +361,7 @@ fn learn_mixed_discrete_net_gen<T: StructuralLearningAlgorithm>(wtr: &mut Writer
     let net = sl.fit_transform(real_net, &data);
     let duration = start.elapsed();
 
-    println!("Duration: {:?}", duration);
+    
 
     let computed_mat = create_adj_matrix(&net);
     let mut tp = 0; 
@@ -327,7 +413,7 @@ fn learn_mixed_discrete_net_gen<T: StructuralLearningAlgorithm>(wtr: &mut Writer
     } else {
         (2.0 * precision * recall) / (precision + recall)
     };
-
+    println!("Duration: {:?}, Precision: {}, Recall: {}, f1_score:{}", duration, precision, recall, f1_score);
     save_csv(wtr, duration, f1_score, precision, recall)?;
 
     Ok(())
@@ -516,11 +602,11 @@ fn test_prova(){
     }
 }*/
 
-fn get_mixed_discrete_net_10_nodes_with_data_gen_random(n_node:usize, density:f64) ->(CtbnNetwork, CtbnNetwork, CtbnNetwork, Dataset) {
+fn get_mixed_discrete_net_10_nodes_with_data_gen_random(n_node:usize, density:f64) ->(CtbnNetwork, CtbnNetwork, CtbnNetwork, Dataset, Dataset, Dataset) {
     let mut net1 = CtbnNetwork::new();
     let mut net2 = CtbnNetwork::new();
     let mut net3 = CtbnNetwork::new();
-    let max_edges = 2.0 *n_node as f64 * (n_node-1) as f64 * density;
+    let max_edges = n_node as f64 * (n_node-1) as f64 * density;
     generate_nodes(&mut net1, n_node, 3);
     generate_nodes(&mut net2, n_node, 3);
     generate_nodes(&mut net3, n_node, 3);
@@ -539,13 +625,27 @@ fn get_mixed_discrete_net_10_nodes_with_data_gen_random(n_node:usize, density:f6
         net3.add_edge(node_1, node_2);
     }
     let mut cim_generator: UniformParametersGenerator =
-        RandomParametersGenerator::new(1.0..10.0, Some(6813071588535822));
+        RandomParametersGenerator::new(10.0..30.0, Some(6813071588535822)); 
     cim_generator.generate_parameters(&mut net1);
     cim_generator.generate_parameters(&mut net2);
     cim_generator.generate_parameters(&mut net3);
 
-    let data = trajectory_generator(&net1, 300, 30.0, Some(6347747169756259));
-    return (net1, net2, net3, data);
+    let number = (30 * n_node);
+    //println!("numero traj: {}", number);
+    let cont = ((n_node * n_node) as f64 * density) as usize / n_node;
+    //let data = trajectory_generator(&net1, number.try_into().unwrap(), 30.0, Some(6347747169756259)); // modificare 
+    let data1 = trajectory_generator_2(&net1, number.try_into().unwrap(), 
+                                                (3usize.pow(cont as u32 + 2) as f64 * 0.5) as usize, Some(6347747169756259), n_node);
+    let data2 = trajectory_generator_2(&net1, number.try_into().unwrap(), 
+                                                3usize.pow(cont as u32 + 2), Some(6347747169756259), n_node);
+    let data3 = trajectory_generator_2(&net1, number.try_into().unwrap(), 
+                                                (3usize.pow(cont as u32 + 2) as f64 * 1.5) as usize, Some(6347747169756259), n_node);
+    
+
+    return (net1, net2, net3, data1, data2, data3);
+    //let data = trajectory_generator(&net1, number.try_into().unwrap(), 10.0, Some(6347747169756259));
+    //let data = trajectory_generator_2(&net1, 1, 729, Some(6347747169756259)); 
+    //return (net1, net2, net3, data);
 
 }
 
@@ -553,7 +653,7 @@ fn get_mixed_discrete_net_10_nodes_with_data_gen_random(n_node:usize, density:f6
 
 fn get_mixed_discrete_net_10_nodes_with_data_gen() -> (CtbnNetwork, Dataset) { // 23 edges > 20% coverage
     let mut net = CtbnNetwork::new();
-    generate_nodes(&mut net, 10, 3);
+    generate_nodes(&mut net, 100, 3);
     //net.add_node(generate_discrete_time_continous_node(String::from("9"), 4));
         //.unwrap();
 
@@ -587,10 +687,11 @@ fn get_mixed_discrete_net_10_nodes_with_data_gen() -> (CtbnNetwork, Dataset) { /
     
 
     let mut cim_generator: UniformParametersGenerator =
-        RandomParametersGenerator::new(1.0..10.0, Some(6813071588535822));
+        RandomParametersGenerator::new(1.0..50.0, Some(6813071588535822));
     cim_generator.generate_parameters(&mut net);
 
-    let data = trajectory_generator(&net, 300, 30.0, Some(6347747169756259));
+    let data = trajectory_generator(&net, 1200, 60.0, Some(6347747169756259));
+    
     return (net, data);
 }
 
@@ -601,7 +702,7 @@ fn create_adj_matrix(net: &CtbnNetwork) -> Vec<Vec<usize>>{
     let mut adj_matrix = vec![vec![0; n]; n];
     for node in net.get_node_indices() {
         for parent in net.get_parent_set(node){
-            adj_matrix[parent][node] = 1;
+            adj_matrix[node][parent] = 1;
         }
     }
     return adj_matrix;
@@ -784,10 +885,10 @@ fn get_mixed_discrete_net_10_nodes_with_data_gen_3() -> (CtbnNetwork, Dataset) {
         net.add_edge(7, 9);
 
     let mut cim_generator: UniformParametersGenerator =
-        RandomParametersGenerator::new(1.0..10.0, Some(6813071588535822));
+        RandomParametersGenerator::new(1.0..50.0, Some(6813071588535822));
     cim_generator.generate_parameters(&mut net);
 
-    let data = trajectory_generator(&net, 300, 30.0, Some(6347747169756259));
+    let data = trajectory_generator(&net, 1200, 60.0, Some(6347747169756259));
     return (net, data);
 }
 
@@ -800,7 +901,7 @@ fn save_csv(wtr: &mut Writer<File>, duration: Duration, f1_score: f64, precision
     let fraction = nanos as f64 / 1_000_000_000.0;
 
     let dur = secs as f64 + fraction;
-
+    
 
     let records = vec![
         Record {

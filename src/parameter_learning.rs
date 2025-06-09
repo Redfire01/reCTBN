@@ -10,6 +10,7 @@ use crate::{process, tools::Dataset};
 use log::debug;
 
 /// It defines the required methods for learn the `Parameters` from data.
+
 pub trait ParameterLearning: Sync {
     /// Fit the parameter of the `node` over a `dataset` given a `parent_set`
     ///
@@ -313,6 +314,7 @@ impl ParameterLearning for MLE {
 ///      0.1
 ///  ));
 /// ```
+#[derive(Copy, Clone)]
 pub struct BayesianApproach {
     pub alpha: usize,
     pub tau: f64,

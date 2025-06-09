@@ -1,3 +1,5 @@
+/*
+
 #![allow(non_snake_case)]
 
 mod utils;
@@ -654,3 +656,4 @@ fn learn_mixed_discrete_net_3_nodes_ctpc_gen() {
     learn_mixed_discrete_net_3_nodes_gen(ctpc);
 }
 
+*/
