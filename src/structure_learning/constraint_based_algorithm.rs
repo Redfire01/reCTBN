@@ -13,14 +13,53 @@ use crate::parameter_learning::ParameterLearning;
 use crate::process;
 use crate::structure_learning::StructuralLearningAlgorithm;
 use crate::tools::Dataset;
-
+/* To do: 
 pub struct Cache<'a, P: ParameterLearning> {
     parameter_learning: &'a P,
     cache_persistent_small: HashMap<Option<BTreeSet<usize>>, Params>,
     cache_persistent_big: HashMap<Option<BTreeSet<usize>>, Params>,
     parent_set_size_small: usize,
+}*/
+
+pub struct Cache<'a, P: ParameterLearning> {
+    parameter_learning: &'a P,
+    cache_persistent: HashMap<Option<BTreeSet<usize>>, Params>,
 }
 
+
+impl<'a, P: ParameterLearning> Cache<'a, P> {
+    pub fn new(parameter_learning: &'a P) -> Cache<'a, P> {
+        Cache {
+            parameter_learning,
+            cache_persistent: HashMap::new(),
+
+        }
+    }
+    pub fn fit<T: process::NetworkProcess>(
+        &mut self,
+        net: &T,
+        dataset: &Dataset,
+        node: usize,
+        parent_set: Option<BTreeSet<usize>>,
+    ) -> Params {
+        match self.cache_persistent.get(&parent_set) {
+                // TODO: Better not clone `params`, useless clock cycles, RAM use and I/O
+                // not cloning requires a minor and reasoned refactoring across the library
+                Some(params) => params.clone(),
+                None => {
+                    let params =
+                        self.parameter_learning
+                            .fit(net, dataset, node, parent_set.clone());
+                    self.cache_persistent
+                        .insert(parent_set, params.clone());
+                    params
+                }
+        }
+    }
+}
+
+
+/*
 impl<'a, P: ParameterLearning> Cache<'a, P> {
     pub fn new(parameter_learning: &'a P) -> Cache<'a, P> {
         Cache {
@@ -77,7 +116,7 @@ impl<'a, P: ParameterLearning> Cache<'a, P> {
             }
         }
     }
-}
+}*/
 
 /// Continuous-Time Peter Clark algorithm.
 ///

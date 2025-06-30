@@ -13,7 +13,7 @@ use crate::parameter_learning::ParameterLearning;
 use crate::process;
 use crate::structure_learning::StructuralLearningAlgorithm;
 use crate::tools::Dataset;
-use crate::structure_learning::constraint_based_algorithm::Cache;
+use crate::structure_learning::constraint_based_algorithm::{Cache};
 use crate::params::ParamsTrait;
 
 
@@ -45,7 +45,7 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
         let mut net = net;
         net.initialize_adj_matrix();
         
-        let mut learned_parent_sets: Vec<(usize, BTreeSet::<usize>)> = vec![];
+        let mut learned_parent_sets: Vec<(usize, Vec::<usize>)> = vec![];
         let mut separation_set = BTreeSet::<usize>::new();
 
         learned_parent_sets.par_extend(net.get_node_indices().into_par_iter().map(|child_node| {
@@ -79,7 +79,7 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
                                                 dataset,
                                                 &mut cache,
                                             );
-
+                
                 if !(p_value_chi.2) {  
                     // lista di tuple (parent, mean_p_value)
                         //candidate_parent_set.push((*parent, (((p_value_chi.0)) / (n_tests as f64))));
@@ -93,6 +93,7 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
                     //println!("p_value f: {}", p_value_f.0);
                     candidate_parent_set.push((*parent, (((p_value_f.0)))));
                 }
+
                 // F s < limsx || s > limdx --> dependent || Chi-squared < 1-self-alpha independent --> > 1-self.alpha --> dependent
                 //2: IF: the nodes are not independent they are added to candidate_parent_set ELSE: not considered
                 //   eliminate all the nodes independent from T.
@@ -106,7 +107,8 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
             candidate_parent_set.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
             //println!("child_node {}, CPS: {:?}", child_node, candidate_parent_set);
             //4: Initialization of the currentPS ... 
-            let mut candidate_parent_set_keys: BTreeSet<usize> = candidate_parent_set.iter().map(|(key, _)| *key).collect();
+            let mut candidate_parent_set_keys: Vec<usize> = candidate_parent_set.iter().map(|(key, _)| *key).collect();
+
             //5: Foreach node in candidate parent set... 
             
                 //6: IF T (child_node) not indep from X | separation set \subseteq currentPS
@@ -149,60 +151,116 @@ impl<P: ParameterLearning> StructuralLearningAlgorithm for Hiton<P> { // Structu
                             candidate_parent_set_keys_2.remove(X);
                             break;
                         }
-                        
+
                     }
                 }
                 candidate_parent_set_keys = candidate_parent_set_keys_2;
 
             }*/
         
+            /*
+                1 - prima cosa prendo il primo elemento da candidate_parent_set_keys e lo metto in CurrentPC
+                2 - fintantoché candidate_parent_set_keys non vuoto
+                    2.1 - inserisco e faccio pop
+                    2.2 - creo separation set 
+                    2.3 - controllo che o il nodo è X o nel separation set ci sia un elemento che è X. (X ultimo nodo preso in considerazione)
+                    2.4 - faccio il test d'ipotesi
+            */
+/*
+            println!("{:?}", candidate_parent_set_keys);
+            
             for separation_set_size in 1..=candidate_parent_set_keys.len() {  // <-- Ciclo esterno che varia `separation_set_size`
-                //println!("Child node: {}, PS: {:?}", child_node, candidate_parent_set_keys);
-                for X in candidate_parent_set_keys.clone().iter() { 
-                    
-                    for separation_set in candidate_parent_set_keys
-                        .clone()
-                        .iter()
-                        .filter(|&&x| x != *X)
-                        .copied() // Copia i valori per ottenere un iteratore su `usize`
-                        .combinations(separation_set_size) 
-                    {
-                        let separation_set: BTreeSet<usize> = separation_set.into_iter().collect();
-                        /*
-                        let mut sep_set_size = 1;
-                        
-                        for i in separation_set.iter(){
-                            sep_set_size *= net.get_node(i.clone()).get_reserved_space_as_parent();
-                        }*/
+                      
+                println!("Child node: {}, PS: {:?}", child_node, candidate_parent_set_keys);
+                        for X in candidate_parent_set_keys.clone().iter() {
+                            for separation_set in candidate_parent_set_keys
+                                .clone()
+                                .iter()
+                                .filter(|&&x| x != *X)
+                                .copied() // Copia i valori per ottenere un iteratore su `usize`
+                                .combinations(separation_set_size) 
+                            {
+                                let separation_set: BTreeSet<usize> = separation_set.into_iter().collect();
+                                
+                                // 7: add X to currentPS
 
- 
-                        
-                        // 7: add X to currentPS
-                        if self.Ftest.call(
-                                            &net,                   
-                                            child_node,
-                                            *X,
-                                            &separation_set,
-                                            dataset,
-                                            &mut cache,
-                                        ) && self.Chi2test.call(        
-                                            &net,                            
-                                            child_node,
-                                            *X,
-                                            &separation_set,
-                                            dataset,
-                                            &mut cache,
-                                        ){  
-                            candidate_parent_set_keys.remove(&X);
-                            break;
+                                //if X == candidate_parent_set_keys.last().unwrap() || separation_set.contains(candidate_parent_set_keys.last().unwrap()){
+                                    if self.Ftest.call(
+                                                        &net,                   
+                                                        child_node,
+                                                        *X,
+                                                        &separation_set,
+                                                        dataset,
+                                                        &mut cache,
+                                                    ) && self.Chi2test.call(        
+                                                        &net,                            
+                                                        child_node,
+                                                        *X,
+                                                        &separation_set,
+                                                        dataset,
+                                                        &mut cache,
+                                                    ){  
+                                        candidate_parent_set_keys.retain(|&x| x != *X);
+                                        break;
+                                    }
+                                //}
+
+
+                            }
+                        }
+
+                    }*/
+            let mut CurrentPC: Vec<usize> = Vec::new();
+            if candidate_parent_set_keys.len() > 0{
+                CurrentPC.push(candidate_parent_set_keys.pop().unwrap());
+                while candidate_parent_set_keys.len() > 0 {
+
+                    CurrentPC.push(candidate_parent_set_keys.pop().unwrap());
+                    for separation_set_size in 1..= (CurrentPC.len() - 1){  // <-- Ciclo esterno che varia `separation_set_size`
+                        //println!("Child node: {}, PS: {:?}", child_node, candidate_parent_set_keys);
+                        for X in CurrentPC.clone().iter() {
+                            for separation_set in CurrentPC
+                                .clone()
+                                .iter()
+                                .filter(|&&x| x != *X)
+                                .copied() // Copia i valori per ottenere un iteratore su `usize`
+                                .combinations(separation_set_size) 
+                            {
+                                let separation_set: BTreeSet<usize> = separation_set.into_iter().collect();
+                                
+                                // 7: add X to currentPS
+
+                                if X == CurrentPC.last().unwrap() || separation_set.contains(CurrentPC.last().unwrap()){
+                                    if self.Ftest.call(
+                                                        &net,                   
+                                                        child_node,
+                                                        *X,
+                                                        &separation_set,
+                                                        dataset,
+                                                        &mut cache,
+                                                    ) && self.Chi2test.call(        
+                                                        &net,                            
+                                                        child_node,
+                                                        *X,
+                                                        &separation_set,
+                                                        dataset,
+                                                        &mut cache,
+                                                    ){  
+                                        CurrentPC.retain(|&x| x != *X);
+                                        break;
+                                    }
+                                }
+
+
+                            }
+
                         }
 
                     }
                 }
+            }  
 
-            }
-
-                (child_node, candidate_parent_set_keys)
+                (child_node, CurrentPC)
         }));
         
 
