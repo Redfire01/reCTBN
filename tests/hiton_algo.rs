@@ -15,6 +15,9 @@ use reCTBN::structure_learning::score_function::*;
 use reCTBN::structure_learning::StructuralLearningAlgorithm;
 use reCTBN::structure_learning::hiton::Hiton;
 use reCTBN::structure_learning::hiton;
+use reCTBN::structure_learning::hiton2::Hiton2;
+use reCTBN::structure_learning::hiton2;
+
 use reCTBN::tools::*;
 use utils::*;
 use std::time::Instant;
@@ -59,7 +62,7 @@ fn global_test_density_first() -> Result<(), Box<dyn Error>>{
     //test_random_all_algorithms(0.1, 20);
     //test_random_all_algorithms(0.15, 20);
     //test_random_all_algorithms(0.2, 20);
-    test_random_all_algorithms(0.20, 20);
+    test_random_all_algorithms(0.30, 20);
     //test_random_all_algorithms(0.4, 20);
     //test_random_all_algorithms(0.5, 20);
     //test_random_all_algorithms(0.4, 30);
@@ -199,7 +202,7 @@ fn average_bic_score(net: CtbnNetwork, data: Dataset) -> f64{
 
 fn test_random_all_algorithms(density: f64, n_node:usize) -> Result<(), Box<dyn Error>> { 
     
-    let filename = format!("New_Tests_Algorithms_{}_{}_nodes.csv", density, n_node);
+    let filename = format!("New_Tests_Algorithms_{}_{}_nodes_hiton_cardinality3_2.csv", density, n_node);
     let file = File::create(filename.to_string())?;
     let mut wtr = Writer::from_writer(file);
     for n in 0..30{
@@ -280,6 +283,9 @@ fn test_random_all_algorithms(density: f64, n_node:usize) -> Result<(), Box<dyn 
         let hiton = Hiton::new(parameter_learning, f, chi_sq); 
         //learn_mixed_discrete_net_gen(&mut wtr, &hiton, 1, n_node, real_net1.clone(), data1.clone())?;
         learn_mixed_discrete_net_gen(&mut wtr, &hiton, 1, n_node, real_net1.clone(), data2.clone())?;
+        let hiton2 = Hiton2::new(parameter_learning, f, chi_sq); 
+        //learn_mixed_discrete_net_gen(&mut wtr, &hiton, 1, n_node, real_net1.clone(), data1.clone())?;
+        learn_mixed_discrete_net_gen(&mut wtr, &hiton2, 1, n_node, real_net1.clone(), data2.clone())?;
         //learn_mixed_discrete_net_gen(&mut wtr, &hiton, 1, n_node, real_net1.clone(), data3.clone())?;
         let ctpc = CTPC::new(parameter_learning, f, chi_sq);
         //learn_mixed_discrete_net_gen(&mut wtr, &ctpc, 1, n_node, real_net1.clone(), data1.clone())?;
@@ -560,9 +566,9 @@ fn get_mixed_discrete_net_10_nodes_with_data_gen_random(n_node:usize, density:f6
     let mut net2 = CtbnNetwork::new();
     let mut net3 = CtbnNetwork::new();
     let max_edges = n_node as f64 * (n_node-1) as f64 * density;
-    generate_nodes(&mut net1, n_node, 4);
-    generate_nodes(&mut net2, n_node, 4);
-    generate_nodes(&mut net3, n_node, 4);
+    generate_nodes(&mut net1, n_node, 3);
+    generate_nodes(&mut net2, n_node, 3);
+    generate_nodes(&mut net3, n_node, 3);
     
     let mut i = 0.0;
     while i < (max_edges){
@@ -587,19 +593,19 @@ fn get_mixed_discrete_net_10_nodes_with_data_gen_random(n_node:usize, density:f6
     //println!("numero traj: {}", number);
     let cont = ((n_node * n_node) as f64 * density) as usize / n_node;
     //let data = trajectory_generator(&net1, number.try_into().unwrap(), 30.0, Some(6347747169756259)); // modificare 
-    /*
+    
     let data1 = trajectory_generator_2(&net1, number.try_into().unwrap(), 
                                                 (3usize.pow(cont as u32 + 2) as f64 * 0.5) as usize, Some(6347747169756259), n_node);
     let data2 = trajectory_generator_2(&net1, number.try_into().unwrap(), 
                                                 3usize.pow(cont as u32 + 2), Some(6347747169756259), n_node);
     let data3 = trajectory_generator_2(&net1, number.try_into().unwrap(), 
-                                                (3usize.pow(cont as u32 + 2) as f64 * 1.5) as usize, Some(6347747169756259), n_node);*/
-    let data1 = trajectory_generator_2(&net1, number.try_into().unwrap(), 
+                                                (3usize.pow(cont as u32 + 2) as f64 * 1.5) as usize, Some(6347747169756259), n_node);
+    /*let data1 = trajectory_generator_2(&net1, number.try_into().unwrap(), 
                                                 40, Some(6347747169756259), n_node);
     let data2 = trajectory_generator_2(&net1, number.try_into().unwrap(), 
                                                40, Some(6347747169756259), n_node);
     let data3 = trajectory_generator_2(&net1, number.try_into().unwrap(), 
-                                                40, Some(6347747169756259), n_node);
+                                                40, Some(6347747169756259), n_node);*/
 
     return (net1, net2, net3, data1, data2, data3);
     //let data = trajectory_generator(&net1, number.try_into().unwrap(), 10.0, Some(6347747169756259));
