@@ -17,7 +17,7 @@ use reCTBN::structure_learning::hiton::Hiton;
 use reCTBN::structure_learning::hiton;
 use reCTBN::structure_learning::hiton2::Hiton2;
 use reCTBN::structure_learning::hiton2;
-
+use std::io;
 use reCTBN::tools::*;
 use utils::*;
 use std::time::Instant;
@@ -62,7 +62,7 @@ fn global_test_density_first() -> Result<(), Box<dyn Error>>{
     //test_random_all_algorithms(0.1, 20);
     //test_random_all_algorithms(0.15, 20);
     //test_random_all_algorithms(0.2, 20);
-    test_random_all_algorithms(0.30, 20);
+    //test_random_all_algorithms(0.20, 15);
     //test_random_all_algorithms(0.4, 20);
     //test_random_all_algorithms(0.5, 20);
     //test_random_all_algorithms(0.4, 30);
@@ -72,7 +72,17 @@ fn global_test_density_first() -> Result<(), Box<dyn Error>>{
     //test_random_all_algorithms(0.2, 30);
     //test_random_all_algorithms(0.3, 30);
     //test_random_all_algorithms(0.4, 30);
-    //test_all_in_one(10);
+    println!("Enter the number of nodes:");
+
+    let mut usize_input = String::new();
+    io::stdin().read_line(&mut usize_input).expect("Failed to read usize");
+    let n_node: usize = usize_input.trim().parse().expect("Please enter a valid usize");
+    println!("Enter the density of the network:");
+    let mut float_input = String::new();
+    io::stdin().read_line(&mut float_input).expect("Failed to read float");
+    let density: f64 = float_input.trim().parse().expect("Please enter a valid float");
+    test_random_all_algorithms(density, n_node);    
+    test_all_in_one(n_node);
     //test_random_all_algorithms(0.1, 40);
     //let (net1, real_net2, real_net3, data) = get_mixed_discrete_net_10_nodes_with_data_gen_random(20, 0.2); 
     //let data = trajectory_generator_2(&net1, 100, 10, Some(6347747169756259));
@@ -87,37 +97,28 @@ fn test_all_in_one(n_node:usize) -> Result<(), Box<dyn Error>> {
     let filename = format!("Algorithms_{}_nodes_all_in_one.csv", n_node, );
     let file = File::create(filename.to_string())?;
     let mut wtr = Writer::from_writer(file);
-    let mut f;
-    let mut chi_sq;
-    if n_node == 10{
-        f = F::new(1e-6);
-        chi_sq = ChiSquare::new(1e-4);
-    }
-    else if n_node == 20{
-        f = F::new(1e-6);
-        chi_sq = ChiSquare::new(1e-4);
-    }
-    else {
-        f = F::new(1e-4);
-        chi_sq = ChiSquare::new(1e-2);
-    }
-    
-    let parameter_learning = BayesianApproach { alpha: 1, tau: 1.0 };
-    let hiton = Hiton::new(parameter_learning, f, chi_sq);
+    for n in 0..100{
+        let mut f;
+        let mut chi_sq;
+        f = F::new(1e-1);
+        chi_sq = ChiSquare::new(1e-1);
 
-    let parameter_learning = BayesianApproach { alpha: 1, tau: 1.0 };
-    let ctpc = CTPC::new(parameter_learning, f, chi_sq);
+        let parameter_learning = BayesianApproach { alpha: 1, tau: 1.0 };
+        let hiton = Hiton2::new(parameter_learning, f, chi_sq);
 
-    let bic = BIC::new(1, 1.0);      
-    let ll = LogLikelihood::new(1, 1.0);
-    let ctss = HillClimbing::new(bic, None);
-    
-    let (real_net1, real_net2, real_net3, data1, data2, data3) = all_in_one(n_node);
-    
-    learn_mixed_discrete_net_gen(&mut wtr, &hiton, 1, n_node, real_net1, data1.clone())?;
-    learn_mixed_discrete_net_gen(&mut wtr, &ctpc, 1, n_node, real_net2, data1.clone())?;
-    learn_mixed_discrete_net_gen(&mut wtr, &ctss, 1, n_node, real_net3, data1.clone())?;
+        let parameter_learning = BayesianApproach { alpha: 1, tau: 1.0 };
+        let ctpc = CTPC::new(parameter_learning, f, chi_sq);
 
+        let bic = BIC::new(1, 1.0);      
+        let ll = LogLikelihood::new(1, 1.0);
+        let ctss = HillClimbing::new(bic, None);
+        
+        let (real_net1, real_net2, real_net3, data1, data2, data3) = all_in_one(n_node);
+        
+        learn_mixed_discrete_net_gen(&mut wtr, &hiton, 1, n_node, real_net1, data1.clone())?;
+        learn_mixed_discrete_net_gen(&mut wtr, &ctpc, 1, n_node, real_net2, data1.clone())?;
+        learn_mixed_discrete_net_gen(&mut wtr, &ctss, 1, n_node, real_net3, data1.clone())?;
+    }
     wtr.flush()?;
 
     println!("CSV salvato con successo!");
@@ -131,9 +132,9 @@ fn all_in_one(n_node:usize) ->(CtbnNetwork, CtbnNetwork, CtbnNetwork, Dataset, D
     let mut net1 = CtbnNetwork::new();
     let mut net2 = CtbnNetwork::new();
     let mut net3 = CtbnNetwork::new();
-    generate_nodes(&mut net1, n_node, 4);
-    generate_nodes(&mut net2, n_node, 4);
-    generate_nodes(&mut net3, n_node, 4);
+    generate_nodes(&mut net1, n_node, 3);
+    generate_nodes(&mut net2, n_node, 3);
+    generate_nodes(&mut net3, n_node, 3);
     
     
     let mut i = 0;
@@ -177,9 +178,10 @@ fn all_in_one(n_node:usize) ->(CtbnNetwork, CtbnNetwork, CtbnNetwork, Dataset, D
 
     cim_generator.generate_parameters(&mut net3);
 
-    //let number = 30* n_node;
-    let number = 2000;
+    //let number = 30* n_node.pow(2);
+    let number = 10000;
     println!("numero traj: {}", number);
+
     let data1 = trajectory_generator(&net1, number.try_into().unwrap(), 10.0, Some(6347747169756259)); // modificare 
     let data2 = trajectory_generator(&net1, number.try_into().unwrap(), 10.0, Some(6347747169756259));
     let data3 = trajectory_generator(&net1, number.try_into().unwrap(), 10.0, Some(6347747169756259));
@@ -205,7 +207,7 @@ fn test_random_all_algorithms(density: f64, n_node:usize) -> Result<(), Box<dyn 
     let filename = format!("New_Tests_Algorithms_{}_{}_nodes_hiton_cardinality3_2.csv", density, n_node);
     let file = File::create(filename.to_string())?;
     let mut wtr = Writer::from_writer(file);
-    for n in 0..30{
+    for n in 0..100{
         let mut f:F;
         let mut chi_sq:ChiSquare;
         
@@ -280,9 +282,9 @@ fn test_random_all_algorithms(density: f64, n_node:usize) -> Result<(), Box<dyn 
         let likelihood = average_bic_score(real_net1.clone(), data1.clone());
         println!("Avg bic: {}", likelihood);
 
-        let hiton = Hiton::new(parameter_learning, f, chi_sq); 
+        /*let hiton = Hiton::new(parameter_learning, f, chi_sq); 
         //learn_mixed_discrete_net_gen(&mut wtr, &hiton, 1, n_node, real_net1.clone(), data1.clone())?;
-        learn_mixed_discrete_net_gen(&mut wtr, &hiton, 1, n_node, real_net1.clone(), data2.clone())?;
+        learn_mixed_discrete_net_gen(&mut wtr, &hiton, 1, n_node, real_net1.clone(), data2.clone())?;*/
         let hiton2 = Hiton2::new(parameter_learning, f, chi_sq); 
         //learn_mixed_discrete_net_gen(&mut wtr, &hiton, 1, n_node, real_net1.clone(), data1.clone())?;
         learn_mixed_discrete_net_gen(&mut wtr, &hiton2, 1, n_node, real_net1.clone(), data2.clone())?;
