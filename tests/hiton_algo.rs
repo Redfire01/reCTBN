@@ -81,7 +81,7 @@ fn global_test_density_first() -> Result<(), Box<dyn Error>>{
     let mut float_input = String::new();
     io::stdin().read_line(&mut float_input).expect("Failed to read float");
     let density: f64 = float_input.trim().parse().expect("Please enter a valid float");
-    test_random_all_algorithms(density, n_node);    
+    test_random_all_algorithms(density, n_node);   
     test_all_in_one(n_node);
     //test_random_all_algorithms(0.1, 40);
     //let (net1, real_net2, real_net3, data) = get_mixed_discrete_net_10_nodes_with_data_gen_random(20, 0.2); 
@@ -97,7 +97,7 @@ fn test_all_in_one(n_node:usize) -> Result<(), Box<dyn Error>> {
     let filename = format!("Algorithms_{}_nodes_all_in_one.csv", n_node, );
     let file = File::create(filename.to_string())?;
     let mut wtr = Writer::from_writer(file);
-    for n in 0..100{
+    //for n in 0..100{
         let mut f;
         let mut chi_sq;
         f = F::new(1e-1);
@@ -118,7 +118,7 @@ fn test_all_in_one(n_node:usize) -> Result<(), Box<dyn Error>> {
         learn_mixed_discrete_net_gen(&mut wtr, &hiton, 1, n_node, real_net1, data1.clone())?;
         learn_mixed_discrete_net_gen(&mut wtr, &ctpc, 1, n_node, real_net2, data1.clone())?;
         learn_mixed_discrete_net_gen(&mut wtr, &ctss, 1, n_node, real_net3, data1.clone())?;
-    }
+    //}
     wtr.flush()?;
 
     println!("CSV salvato con successo!");
