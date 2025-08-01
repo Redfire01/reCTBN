@@ -178,11 +178,11 @@ fn all_in_one(n_node:usize) ->(CtbnNetwork, CtbnNetwork, CtbnNetwork, Dataset, D
 
     cim_generator.generate_parameters(&mut net3);
 
-    //let number = 30* n_node.pow(2);
-    let number = 10000;
+    let number = 1;
+ 
     println!("numero traj: {}", number);
 
-    let data1 = trajectory_generator(&net1, number.try_into().unwrap(), 10.0, Some(6347747169756259)); // modificare 
+    let data1 = trajectory_generator(&net1, (3usize.pow((n_node as u32 + 1).try_into().unwrap()) as f64 * 0.5) as u64, 10.0, Some(6347747169756259)); // modificare 
     let data2 = trajectory_generator(&net1, number.try_into().unwrap(), 10.0, Some(6347747169756259));
     let data3 = trajectory_generator(&net1, number.try_into().unwrap(), 10.0, Some(6347747169756259));
     
@@ -204,7 +204,7 @@ fn average_bic_score(net: CtbnNetwork, data: Dataset) -> f64{
 
 fn test_random_all_algorithms(density: f64, n_node:usize) -> Result<(), Box<dyn Error>> { 
     
-    let filename = format!("New_Tests_Algorithms_{}_{}_nodes_hiton_cardinality3_2.csv", density, n_node);
+    let filename = format!("New_Tests_Algorithms_{}_{}_nodes_hiton_cardinality3_2_prova.csv", density, n_node);
     let file = File::create(filename.to_string())?;
     let mut wtr = Writer::from_writer(file);
     for n in 0..100{
