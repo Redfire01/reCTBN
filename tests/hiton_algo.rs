@@ -207,7 +207,7 @@ fn test_random_all_algorithms(density: f64, n_node:usize) -> Result<(), Box<dyn 
     let filename = format!("New_Tests_Algorithms_{}_{}_nodes_hiton_cardinality3_2_prova.csv", density, n_node);
     let file = File::create(filename.to_string())?;
     let mut wtr = Writer::from_writer(file);
-    for n in 0..30{
+    for n in 0..100{
         let mut f:F;
         let mut chi_sq:ChiSquare;
         
