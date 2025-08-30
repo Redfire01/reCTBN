@@ -94,7 +94,7 @@ fn global_test_density_first() -> Result<(), Box<dyn Error>>{
 }
 
 fn test_all_in_one(n_node:usize) -> Result<(), Box<dyn Error>> { 
-    let filename = format!("Algorithms_{}_nodes_all_in_one.csv", n_node, );
+    let filename = format!("Algorithms_{}_nodes_all_in_one_card2.csv", n_node, );
     let file = File::create(filename.to_string())?;
     let mut wtr = Writer::from_writer(file);
     //for n in 0..100{
@@ -132,9 +132,9 @@ fn all_in_one(n_node:usize) ->(CtbnNetwork, CtbnNetwork, CtbnNetwork, Dataset, D
     let mut net1 = CtbnNetwork::new();
     let mut net2 = CtbnNetwork::new();
     let mut net3 = CtbnNetwork::new();
-    generate_nodes(&mut net1, n_node, 3);
-    generate_nodes(&mut net2, n_node, 3);
-    generate_nodes(&mut net3, n_node, 3);
+    generate_nodes(&mut net1, n_node, 2);
+    generate_nodes(&mut net2, n_node, 2);
+    generate_nodes(&mut net3, n_node, 2);
     
     
     let mut i = 0;
@@ -182,7 +182,7 @@ fn all_in_one(n_node:usize) ->(CtbnNetwork, CtbnNetwork, CtbnNetwork, Dataset, D
  
     println!("numero traj: {}", number);
 
-    let data1 = trajectory_generator(&net1, (3usize.pow((n_node as u32 + 1).try_into().unwrap()) as f64 * 0.5) as u64, 10.0, Some(6347747169756259)); // modificare 
+    let data1 = trajectory_generator(&net1, (2usize.pow((n_node as u32 + 1).try_into().unwrap()) as f64 * 0.5) as u64, 10.0, Some(6347747169756259)); // modificare 
     let data2 = trajectory_generator(&net1, number.try_into().unwrap(), 10.0, Some(6347747169756259));
     let data3 = trajectory_generator(&net1, number.try_into().unwrap(), 10.0, Some(6347747169756259));
     
@@ -204,7 +204,7 @@ fn average_bic_score(net: CtbnNetwork, data: Dataset) -> f64{
 
 fn test_random_all_algorithms(density: f64, n_node:usize) -> Result<(), Box<dyn Error>> { 
     
-    let filename = format!("New_Tests_Algorithms_{}_{}_nodes_hiton_cardinality3_2_prova.csv", density, n_node);
+    let filename = format!("New_Tests_Algorithms_{}_{}_nodes_hiton_cardinality2_2_prova.csv", density, n_node);
     let file = File::create(filename.to_string())?;
     let mut wtr = Writer::from_writer(file);
     for n in 0..100{
@@ -568,9 +568,9 @@ fn get_mixed_discrete_net_10_nodes_with_data_gen_random(n_node:usize, density:f6
     let mut net2 = CtbnNetwork::new();
     let mut net3 = CtbnNetwork::new();
     let max_edges = n_node as f64 * (n_node-1) as f64 * density;
-    generate_nodes(&mut net1, n_node, 3);
-    generate_nodes(&mut net2, n_node, 3);
-    generate_nodes(&mut net3, n_node, 3);
+    generate_nodes(&mut net1, n_node, 2);
+    generate_nodes(&mut net2, n_node, 2);
+    generate_nodes(&mut net3, n_node, 2);
     
     let mut i = 0.0;
     while i < (max_edges){
@@ -597,11 +597,11 @@ fn get_mixed_discrete_net_10_nodes_with_data_gen_random(n_node:usize, density:f6
     //let data = trajectory_generator(&net1, number.try_into().unwrap(), 30.0, Some(6347747169756259)); // modificare 
     
     let data1 = trajectory_generator_2(&net1, number.try_into().unwrap(), 
-                                                (3usize.pow(cont as u32 + 2) as f64 * 0.5) as usize, Some(6347747169756259), n_node);
+                                                (2usize.pow(cont as u32 + 2) as f64 * 0.5) as usize, Some(6347747169756259), n_node);
     let data2 = trajectory_generator_2(&net1, number.try_into().unwrap(), 
-                                                3usize.pow(cont as u32 + 2), Some(6347747169756259), n_node);
+                                                2usize.pow(cont as u32 + 2), Some(6347747169756259), n_node);
     let data3 = trajectory_generator_2(&net1, number.try_into().unwrap(), 
-                                                (3usize.pow(cont as u32 + 2) as f64 * 1.5) as usize, Some(6347747169756259), n_node);
+                                                (2usize.pow(cont as u32 + 2) as f64 * 1.5) as usize, Some(6347747169756259), n_node);
     /*let data1 = trajectory_generator_2(&net1, number.try_into().unwrap(), 
                                                 40, Some(6347747169756259), n_node);
     let data2 = trajectory_generator_2(&net1, number.try_into().unwrap(), 
